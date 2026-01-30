@@ -33,7 +33,7 @@ export function Navbar() {
                   key={product.id}
                   href={`/producto/${product.slug}`}
                   className={cn(
-                    "relative w-24 h-12 rounded-lg transition-all duration-200 overflow-hidden",
+                    "relative w-28 h-14 rounded-lg transition-all duration-200 overflow-hidden",
                     "hover:bg-secondary/50",
                     isActive && "bg-secondary ring-2 ring-primary"
                   )}
