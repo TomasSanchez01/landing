@@ -11,7 +11,7 @@ export function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 py-2">
         <div className="flex items-center justify-center md:justify-between h-16">
           <Link href="/" className="shrink-0 w">
             <Image
@@ -33,7 +33,7 @@ export function Navbar() {
                   key={product.id}
                   href={`/producto/${product.slug}`}
                   className={cn(
-                    "relative w-28 h-14 rounded-lg transition-all duration-200 overflow-hidden",
+                    "relative w-30 h-16 rounded-lg transition-all duration-200 overflow-hidden",
                     "hover:bg-secondary/50",
                     isActive && "bg-secondary ring-2 ring-primary"
                   )}
