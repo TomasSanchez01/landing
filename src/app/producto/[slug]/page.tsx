@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { products, getProductBySlug } from "@/data/products";
 import { Button } from "@/components/ui/button";
+import { NaveCheckoutButton } from "@/components/nave-checkout-button";
 import { ExternalLink, ChevronLeft, Check } from "lucide-react";
 
 interface ProductPageProps {
@@ -108,16 +109,24 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </ul>
             </div>
 
-            <Button size="lg" className="w-full sm:w-auto" asChild>
-              <a
-                href={product.storeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Comprar en Tienda
-                <ExternalLink className="w-4 h-4 ml-2" />
-              </a>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button size="lg" className="w-full sm:w-auto" asChild>
+                <a
+                  href={product.storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Comprar en Tienda
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </a>
+              </Button>
+              <NaveCheckoutButton
+                productId={product.id}
+                productName={product.name}
+                description={product.description}
+                amount={product.priceValue.toFixed(2)}
+              />
+            </div>
           </div>
         </div>
 

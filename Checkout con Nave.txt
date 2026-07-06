@@ -1,0 +1,1485 @@
+Checkout con Nave
+Integrá nuestra solución de cobros vía API y permití pagos con QR o tarjetas directamente desde tu sitio o app. Vas a tener una experiencia simple y segura para tus clientes.
+¿Qué necesitás para empezar?
+
+    Credenciales de sandbox y producción: te permiten generar un token de acceso para comunicarte con nuestras APIs.
+    Utilizar nuestras APIs: para generar intenciones de pago en tiempo real.
+    Elegir cómo mostrar el proceso de pago: podés renderizar un QR, embeber el SDK o redirigir al usuario a nuestro checkout. 
+
+Ciclo de vida de un pago
+Conocé el flujo completo desde la autenticación hasta la acreditación:
+
+    Obtener un access_token con nuestro servicio de autenticación.
+    Generar una intención de pago.
+    Redireccionar al usuario al checkout_url o renderizar el QR.
+    Recibir notificaciones de estado de pago en tiempo real.
+
+Ciclo de vida de un pago
+Autenticación
+Para poder generar y enviarte tus credenciales, necesitamos que nos compartas la siguiente información:
+
+    CUIT del comercio
+    Dos URLs de notificación (notification_url):
+        Una para el entorno de sandbox, donde recibirás notificaciones de prueba.
+        Otra para el entorno de producción, donde recibirás las notificaciones de pagos reales en tiempo real. 
+
+Además, es necesario que completes el flujo de alta de tu nuevo punto de venta online desde la plataforma Nave:
+
+    Ingresá a Nave > Integraciones > Tienda Online Propia
+    Completá el proceso de vinculación
+    Al finalizar, vas a recibir un código de vinculación
+
+👉 Recordá que las credenciales de sandbox y de producción son diferentes, por lo que recibirás un set para cada entorno.📩 Envianos toda la información solicitada junto con el código de vinculación a través de tu ejecutivo Galicia o escribinos a integraciones@navenegocios.com.
+📍 Endpoint Sandbox
+POST
+https://homoservices.apinaranja.com/security-ms/api/security/auth0/b2b/m2msPrivate
+📍 Endpoint Producción
+POST
+https://services.apinaranja.com/security-ms/api/security/auth0/b2b/m2msPrivate
+Parámetros
+BODY
+
+			
+{
+
+  "client_id": "eGXu7VV...LsXWylDmrE",
+
+  "client_secret": "BAdRFax_McS...JLBTH-n",
+
+  "audience": "https://naranja.com/ranty/merchants/api"
+
+}
+
+		
+
+Recordá que esta información es privada. No la compartas con nadie.
+Atributo 	Descripción 	Tipo 	Requerido
+client_id 	Identificación del cliente 	String 	Sí
+client_secret 	Clave secreta 	String 	Sí
+audience 	Audiencia provista 	String 	Sí
+Te recomendamos siempre utilizar una política de reintentos contra nuestras APIs.
+Respuesta
+RESPONSE
+
+			
+{
+
+  "access_token": "eyJhbGciOiJS...1A",
+
+  "scope": "read... write...",
+
+  "expires_in": "86400",
+
+  "token_type": "Bearer"
+
+}
+
+		
+
+Atributo 	Descripción 	Tipo
+access_token 	Token generado 	String
+scope 	Permisos habilitados 	String
+expires_in 	Tiempo de vida expresado en segundos 	String
+token_type 	Tipo de token 	String
+Crear intención de Pago
+La intención de pago es la solicitud formal para iniciar una transacción.
+Creación de solicitud de pago
+Diagrama de intencion de pago
+📍 Endpoint Sandbox
+POST
+https://api-sandbox.ranty.io/api/payment_request/ecommerce
+📍 Endpoint Producción
+POST
+https://api.ranty.io/api/payment_request/ecommerce
+🔐 Headers
+Authorization:Bearer <token>
+Content-Type:application/json
+Body de ejemplo
+BODY
+
+			
+{
+
+  "external_payment_id": "order-111",
+
+  "seller": {
+
+    "pos_id": "f71ba756-1d80-4ab3-9f43-5dc247fd6c4a"
+
+  },
+
+  "transactions": [
+
+    {
+
+      "amount": {
+
+        "currency": "ARS",
+
+        "value": "177.00"
+
+      },
+
+      "products": [
+
+        {
+
+          "name": "Nave product",
+
+          "description": "Nave description",
+
+          "quantity": 1,
+
+          "unit_price": {
+
+            "currency": "ARS",
+
+            "value": "177.00"
+
+          }
+
+        }
+
+      ]
+
+    }
+
+  ],
+
+  "buyer": {
+
+    "doc_type": "DNI",
+
+    "doc_number": "XXXXXXXX",
+
+    "name": "User Platform",
+
+    "user_email": "user.platform@platform.com",
+
+    "user_id": "userplatform_id",
+
+    "billing_address": {
+
+      "street_1": "Platform 110",
+
+      "street_2": "N/A",
+
+      "city": "Santa Fe",
+
+      "region": "Santa Fe",
+
+      "country": "AR",
+
+      "zipcode": "3000"
+
+    }
+
+  },
+
+  "additional_info": {
+
+    "callback_url": "https://tuplatform.com/order_status/order-111"
+
+  },
+
+  "duration_time": 3000
+
+}
+
+		
+
+Atributos del body
+Atributo 	Descripción 	Tipo 	Requerido
+external_payment_id 	Identificador del pago en la plataforma (máximo 36 caracteres) 	String 	Sí
+seller.pos_id 	ID del punto de venta en Nave 	String 	Sí
+transactions 	Datos de la operación 	Object 	Sí
+transactions.amount.currency 	Moneda 	String 	Sí
+transactions.amount.value 	Monto total: Indicar siempre con dos decimales 	String 	Sí
+products 	Datos del producto 	object 	Sí
+products.name 	Nombre del producto 	String 	Sí
+products.description 	Descripción del producto 	String 	No
+products.quantity 	Cantidad 	String 	Sí
+products.unit_price.currency 	Moneda del precio unitario 	String 	Sí
+products.unit_price.value 	Precio unitario: Indicar siempre con dos decimales 	String 	No
+buyer 	Datos del comprador 	Object 	No
+buyer.user_id 	Identificador único del usuario en la plataforma 	string 	No
+buyer.session_id 	Identificador único de la sesión de usuario 	string 	No
+buyer.user_email 	Correo electrónico del usuario 	string 	No
+buyer.name 	Nombre completo del usuario 	string 	No
+buyer.doc_type 	Tipo de documento de identificación del usuario (ej. DNI, CUIT) 	string 	No
+buyer.doc_number 	Número del documento de identificación 	string 	No
+buyer.phone 	Número de teléfono del usuario, incluyendo el código de país 	string 	No
+buyer.billing_address 	Datos del domicilio del cliente. 	string 	No
+buyer.billing_address.street_1 	Segunda línea opcional de la dirección de facturación 	string 	No
+buyer.billing_address.street_2 	Segunda línea opcional de la dirección de facturación 	string 	No
+buyer.billing_address.city 	Ciudad de la dirección de facturación 	string 	No
+buyer.billing_address.region 	Región o provincia de la dirección de facturación 	string 	No
+buyer.billing_address.country 	País de la dirección de facturación 	string 	No
+buyer.billing_address.zipcode 	Código postal de la dirección de facturación 	string 	No
+additional_info.callback_url 	URL a la que el cliente es redirigido una vez aprobado el pago, ya sea automáticamente a los 20 segundos o al presionar el botón "Volver a la tienda" 	String 	No
+duration_time 	Tiempo de expiración en segundos. Por defecto: 1 semana 	String 	No
+Respuesta esperada
+RESPONSE
+
+			
+{
+
+  "id": "ebac56ab-89f2-4419-941e-670f801d9c7b",
+
+  "external_payment_id": "viabarilo_001",
+
+  "checkout_url": "https://sandbox.../nave/sdk?payment_request_id=...",
+
+  "qr_data": "00020101021...-670f801d9c8b6304C0AA"
+
+}
+
+		
+
+Atributo 	Descripción
+id 	Identificación de intención de pago en Nave.
+external_payment_id 	Identificador del pago en la plataforma (máximo 36 caracteres)
+checkout_url 	Link de pago para redireccionar al usuario.
+qr_data 	Cadena codificada utilizada para renderizar el código QR.
+CURL de ejemplo
+CURL Request
+
+
+      
+      
+curl --location 'https://api-sandbox.ranty.io/api/payment_request/ecommerce'
+
+    
+
+      
+      
+--header 'Content-Type: application/json'
+
+    
+
+      
+      
+--header 'Authorization: Bearer '
+
+    
+
+      
+      
+--data '
+
+    
+
+      
+      
+{
+
+    
+
+      
+      
+  "external_payment_id": "order-111",
+
+    
+
+      
+      
+  "seller": {
+
+    
+
+      
+      
+    "pos_id": "f71ba756-1d80-4ab3-9f43-5dc247fd6c4a"
+
+    
+
+      
+      
+  },
+
+    
+
+      
+      
+  "transactions": [
+
+    
+
+      
+      
+    {
+
+    
+
+      
+      
+      "amount": {
+
+    
+
+      
+      
+        "currency": "ARS",
+
+    
+
+      
+      
+        "value": "177.00"
+
+    
+
+      
+      
+      },
+
+    
+
+      
+      
+      "products": [
+
+    
+
+      
+      
+        {
+
+    
+
+      
+      
+          "name": "Nave product",
+
+    
+
+      
+      
+          "description": "Nave description",
+
+    
+
+      
+      
+          "quantity": 1,
+
+    
+
+      
+      
+          "unit_price": {
+
+    
+
+      
+      
+            "currency": "ARS",
+
+    
+
+      
+      
+            "value": "177.00"
+
+    
+
+      
+      
+          }
+
+    
+
+      
+      
+        }
+
+    
+
+      
+      
+      ]
+
+    
+
+      
+      
+    }
+
+    
+
+      
+      
+  ],
+
+    
+
+      
+      
+  "buyer": {
+
+    
+
+      
+      
+    "doc_type": "DNI",
+
+    
+
+      
+      
+    "doc_number": "XXXXXXXX",
+
+    
+
+      
+      
+    "name": "User Platform",
+
+    
+
+      
+      
+    "user_email": "user.platform@platform.com",
+
+    
+
+      
+      
+    "user_id": "userplatform_id",
+
+    
+
+      
+      
+    "billing_address": {
+
+    
+
+      
+      
+      "street_1": "Platform 110",
+
+    
+
+      
+      
+      "street_2": "N/A",
+
+    
+
+      
+      
+      "city": "Santa Fe",
+
+    
+
+      
+      
+      "region": "Santa Fe",
+
+    
+
+      
+      
+      "country": "AR",
+
+    
+
+      
+      
+      "zipcode": "3000"
+
+    
+
+      
+      
+    }
+
+    
+
+      
+      
+  },
+
+    
+
+      
+      
+  "additional_info": {
+
+    
+
+      
+      
+    "callback_url": "https://tuplatform.com/order_status/order-111"
+
+    
+
+      
+      
+  },
+
+    
+
+      
+      
+  "duration_time": 3000
+
+    
+
+      
+      
+}
+
+    
+
+      
+      
+'
+
+    
+
+Accedé desde la plataforma de Nave a Integraciones > Sistema de gestión y descargá el archivo con los IDs de los puntos de venta que vas a usar para generar las intenciones de pago
+Redireccionar al Checkout
+Podés crear un botón de pago y redireccionar a nuestra URL para procesar el pago.
+Experiencia de pago
+
+    En desktop se muestra un QR para escanear con billetera virtual o banco. Si el ingreso manual de tarjetas se encuentra habilitado, puede completarse el pago ingresando datos manuales.
+    En mobile se redirige automáticamente a MODO y el usuario puede elegir si pagar desde la APP de MODO o APP bancarias. 
+
+C2P en dispositivos
+Checkout embebido
+Integrá múltiples formas de pago en tu aplicación o sitio web de manera simple. Nuestra librería te permite embeber el checkout de Nave directamente en tu entorno, con un estándar low-code que facilita la implementación y genera un formulario de pago totalmente personalizable.
+
+    Fácil integración: embebé la solución sin desarrollos complejos.
+    Flexibilidad: adaptá el flujo de pago a tu aplicación o sitio web.
+    Personalización: generá formularios de pago con tu identidad visual.
+    Implementación rápida: comenzá a cobrar con Nave en minutos.
+
+Revisá el proceso completo de integración en nuestro gestor de paquetes, donde encontrarás todo lo necesario para incorporar la solución.
+https://www.npmjs.com/package/@ranty/ranty-sdk
+https://www.jsdelivr.com/package/npm/@ranty/ranty-sdk
+Notificación de un pago
+Nave enviará un POST con la notificación del evento de pago a tu endpoint configurado cada vez que el pago asociado a una intención de pago cambie de estado. Esto te permitirá mantener actualizado el estado de tus órdenes en tiempo real (ej. de PENDING a APPROVED, de APPROVED a REFUNDED, etc.).
+RESPONSE
+
+			
+{
+
+  "payment_id": "ID DEL PAGO",
+
+  "payment_check_url": "api.ranty.io/ranty-payments/payments/:id",
+
+  "external_payment_id": "ID SISTEMA EXTERNO"
+
+}
+
+		
+
+Atributo 	Descripción 	Tipo
+payment_id 	Identificador del pago en Nave 	String
+payment_check_url 	Endpoint utilizado para consultar el estado del pago 	String
+external_payment_id 	Identificador del pago en la plataforma (máximo 36 caracteres) 	String
+Respondé con HTTP 200 OK para confirmar recepción. Si no, se realizarán hasta 5 intentos más con la tabla de frecuencias.
+Intento 	Frecuencia
+1 	10 segundos
+2 	70 segundos
+3 	490 segundos
+4 	3340 segundos
+5 	24010 segundos
+Recuperar un pago
+Una vez recibida la notificación, realizá un GET a la payment_check_url incluida en el evento. De esta forma podés obtener todos los datos actualizados del pago y validar su estado antes de confirmar la orden en tu sistema.
+📍 Endpoint Sandbox
+GET
+https://api-sandbox.ranty.io/ranty-payments/payments/{payment_id}
+📍 Endpoint Producción
+GET
+https://api.ranty.io/ranty-payments/payments/{payment_id}
+🔐 Headers
+Authorization:Bearer <token>
+Content-Type:application/json
+Datos clave devueltos
+RESPONSE
+
+			
+{
+
+  "id": "dc1c28b5-86af-44f0-89e6-63fac289a770",
+
+  "payment_code": "G40852846",
+
+  "creation_date": "2025-09-30T21:17:48.695Z",
+
+  "updated_date": "2025-09-30T21:17:58.305Z",
+
+  "external_payment_id": "ff1d5365-66a4-4e96-a775-ca1595a5bdd4",
+
+  "payment_request_id": "ee3597b4-f392-4698-a6e8-df1a7bb1babf",
+
+  "external_payment_datetime": "2025-09-30T21:17:40.048Z",
+
+  "payment_input": "card_on_file",
+
+  "payment_type": "ecommerce",
+
+  "status": {
+
+    "name": "APPROVED",
+
+    "reason_code": "transaction_successful",
+
+    "reason_name": "Transaction successful"
+
+  },
+
+  "lifecycle_stages": [
+
+    "AUTHORIZATION"
+
+  ],
+
+  "available_balance": {
+
+    "value": "50.00",
+
+    "currency": "ARS"
+
+  },
+
+  "payment_method": {
+
+    "type": "card_payment",
+
+    "data_privacy_type": "tokenized",
+
+    "pan": "541333********0011",
+
+    "bin": "222300",
+
+    "card_brand": "MASTERCARD",
+
+    "installment_plan": {
+
+      "annual_nominal_rate": 0,
+
+      "total_financial_cost": "0.00",
+
+      "installments": 1,
+
+      "total_amount": {
+
+        "value": "50.00",
+
+        "currency": "ARS"
+
+      },
+
+      "name": "1 CUOTA",
+
+      "interest_rate": "0.00",
+
+      "has_interest": false,
+
+      "id": "64b090a3-5285-4f9d-abed-ee15d86856f7"
+
+    },
+
+    "card_type": "DEBIT",
+
+    "card_last4": "4590",
+
+    "issuer": "BANCO DE GALICIA Y BUENOS AIRES S.A.U.",
+
+    "issuer_tax_id": "30500001735",
+
+    "level": "MASTERCARD B2B PRODUCT 7",
+
+    "isoa3": "ARG",
+
+    "isocountry": "Argentina",
+
+    "card_holder_doc_number": "40919455",
+
+    "card_holder_doc_type": "dni",
+
+    "card_holder_email": "alan@gmail.com",
+
+    "card_holder_name": "Alan Di Masi"
+
+  },
+
+  "transactions": [
+
+    {
+
+      "id": "8415bcb3-6616-48f3-b0c1-e0c356c36692",
+
+      "creation_date": "2025-09-30T21:17:48.695Z",
+
+      "soft_descriptor": "Nave*Comercio de prueba",
+
+      "products": [
+
+        {
+
+          "name": "TEST",
+
+          "description": "Esto es una descripcion test",
+
+          "quantity": 1,
+
+          "unit_price": {
+
+            "value": "20.00",
+
+            "currency": "ARS"
+
+          }
+
+        },
+
+        {
+
+          "name": "TEST 2",
+
+          "description": "Esto es una descripcion test 2",
+
+          "quantity": 2,
+
+          "unit_price": {
+
+            "value": "15.00",
+
+            "currency": "ARS"
+
+          }
+
+        }
+
+      ],
+
+      "transaction_type": "PURCHASE",
+
+      "amount": {
+
+        "value": "50.00",
+
+        "currency": "ARS"
+
+      },
+
+      "tip_amount": {
+
+        "value": "0.00",
+
+        "currency": "ARS"
+
+      },
+
+      "total_amount": {
+
+        "value": "50.00",
+
+        "currency": "ARS"
+
+      },
+
+      "auth_data": {
+
+        "id": "c0fa27d9-df63-4a74-895f-d04c237befed",
+
+        "auth_id": "383470",
+
+        "operation_id": "20930211747694998",
+
+        "acquirer_ref_number": "429616470304",
+
+        "reason": "Transaction successful",
+
+        "code": "transaction_successful",
+
+        "description": "Transaction successful",
+
+        "status": "APPROVED",
+
+        "acquirer_id": "global-processing-processor",
+
+        "gateway_reason": "Aprobado (Cod. autorización)",
+
+        "ticket": {
+
+          "number": "8",
+
+          "batch": "289"
+
+        }
+
+      }
+
+    }
+
+  ],
+
+  "seller": {
+
+    "pos_id": "b179b1ba-0c13-4862-9e17-1386847be771"
+
+  },
+
+  "buyer": {
+
+    "user_email": "alan@gmail.com",
+
+    "address": {
+
+      "country_code": "AR",
+
+      "zip_code": "5000"
+
+    },
+
+    "user_id": "335555012345",
+
+    "session": {
+
+      "id": "ad815896-c3d6-430f-868c-4b95527cad29",
+
+      "ip": "191.81.218.251"
+
+    },
+
+    "name": "Alan Di Masi",
+
+    "doc_number": "24482566",
+
+    "billing_address": {
+
+      "zipcode": "5000",
+
+      "country": "AR"
+
+    },
+
+    "doc_type": "CUIT"
+
+  },
+
+  "additional_info": {}
+
+}
+
+		
+
+Estado de un pago aprobado
+
+			
+{
+
+  "id": "…",
+
+  "status": {
+
+    "name": "APPROVED",
+
+    "reason_code": "transaction_successful",
+
+    "reason_name": "Transaction successful"
+
+  },
+
+  "updated_date": "2024-03-07T14:01:09Z"
+
+}
+
+		
+
+Estado de un pago rechazado
+
+			
+{
+
+  "id": "…",
+
+  "status": {
+
+    "name": "REJECTED",
+
+    "reason_code": "gateway_not_available",
+
+    "reason_name": "Rejected (Gateway not available)"
+
+  },
+
+  "updated_date": "2024-03-07T14:01:09Z"
+
+}
+
+		
+
+Estado de un pago cancelado
+
+			
+{
+
+  "id": "…",
+
+  "status": {
+
+    "name": "CANCELLED",
+
+    "reason_code": "transaction_successful",
+
+    "reason_name": "Transaction successful"
+
+  },
+
+  "updated_date": "2024-03-07T14:01:09Z"
+
+}
+
+		
+
+Estado de un pago devuelto
+
+			
+{
+
+  "id": "…",
+
+  "status": {
+
+    "name": "REFUNDED",
+
+    "reason_code": "transaction_successful",
+
+    "reason_name": "Transaction successful"
+
+  },
+
+  "updated_date": "2024-03-07T14:01:09Z"
+
+}
+
+		
+
+Estados posibles de un pago
+Diagrama de estados de un pago
+Estado 	Descripción
+PENDING 	Transacción iniciada, sin resultado final
+APPROVED 	Pago aprobado
+REJECTED 	Pago rechazado
+CANCELLED 	Cancelación manual antes del cierre del lote
+REFUNDED 	Devolución total emitida
+PURCHASE_REVERSED 	Reversado antes de liquidarse
+CHARGEBACK_REVIEW 	Disputa en proceso por contracargo
+CHARGED_BACK 	Contracargo confirmado por la entidad emisora
+Consultar una intención de pago
+Podés consultar el estado de una intención utilizando su payment_request_id. Esta opción funciona como alternativa cuando la notificación no se recibe o la recepción presenta fallas.
+📍 Endpoint Sandbox
+GET
+https://api-sandbox.ranty.io/api/payment_requests/{payment_request_id}
+📍 Endpoint Producción
+GET
+https://api.ranty.io/api/payment_requests/{payment_request_id}
+🔐 Headers
+Authorization:Bearer <token>
+Content-Type:application/json
+Ejemplo con curl:
+CURL Request
+
+
+      
+      
+curl --location
+
+    
+
+      
+      
+'https://api-sandbox.ranty.io/api/payment_requests/0082f42b-29e3-4f74-8675-815feb72bb02'
+
+    
+
+      
+      
+--header 'Authorization: Bearer '
+
+    
+
+Datos clave devueltos
+RESPONSE
+
+			
+{
+
+  "id": "5782098f-d9eb-4161-bae6-65e3de006595",
+
+  "application": "B2B - TEST ECOMMERCE",
+
+  "application_id": "b2d3098b-a4b7-4b98-b74c-d7b1bcbcf070",
+
+  "creation_date": "2025-07-08T15:11:31.000Z",
+
+  "expiration_date": "2025-07-08T15:16:30.000Z",
+
+  "payment_type": "ecommerce",
+
+  "status": {
+
+    "name": "EXPIRED"
+
+  },
+
+  "external_payment_id": "testecommerce_001",
+
+  "transactions": [
+
+    {
+
+      "soft_descriptor": "Nave*Jhon Foo FC",
+
+      "products": [
+
+        {
+
+          "name": "Nave product",
+
+          "description": "Nave description",
+
+          "quantity": 1,
+
+          "unit_price": {
+
+            "currency": "ARS",
+
+            "value": "177.00"
+
+          }
+
+        }
+
+      ],
+
+      "amount": {
+
+        "currency": "ARS",
+
+        "value": "177.00"
+
+      }
+
+    }
+
+  ],
+
+  "shipping": null,
+
+  "buyer": {
+
+    "billing_address": {
+
+      "city": "Santa Fe",
+
+      "country": "AR",
+
+      "region": "Santa Fe",
+
+      "street_1": "Urquiza 110",
+
+      "street_2": "N/A",
+
+      "zipcode": "3000"
+
+    },
+
+    "name": "Nacho Cabrera",
+
+    "session_id": "4516da6e-9c9b-479a-8985-74567238f58e",
+
+    "user_email": "nacho.cabrera@naranjax.com",
+
+    "user_id": "jcabrerauuid"
+
+  },
+
+  "seller": {
+
+    "pos_id": "43e0e11c-8d63-457f-b3f9-ff3ba3bfdc4a",
+
+    "company_id": "comp_2",
+
+    "store": {
+
+      "account_number": "1234567890",
+
+      "country": "ARG",
+
+      "address": {
+
+        "number": "3325",
+
+        "street": "Sarmiento",
+
+        "notes": "Al lado plaza"
+
+      },
+
+      "fantasy_name": "Jhon Foo FC",
+
+      "city": "Córdoba",
+
+      "image_url": "https://www.logo.com.ar/",
+
+      "external_id": "1",
+
+      "mcc": "7399",
+
+      "zip_code": "5000",
+
+      "callback_url": "https://www.callback.com.ar/",
+
+      "external_id_type": "Merchant",
+
+      "cellphone": "11114567890",
+
+      "id": "f5f4aa5b-f637-484f-a588-13ce5e7b4af9",
+
+      "state": "X",
+
+      "email": "john.foo@email.com"
+
+    },
+
+    "owner": {
+
+      "business_name": "Jhon Foo SRL",
+
+      "account_number": "1234567890",
+
+      "country": "ARG",
+
+      "address": {
+
+        "number": "500",
+
+        "street": "San Martin",
+
+        "notes": "Al lado plaza"
+
+      },
+
+      "city": "Cordoba",
+
+      "tax_registration_date": "2014-10-19",
+
+      "last_name": "Foo",
+
+      "external_id": "1",
+
+      "tax_condition": "Monotributo",
+
+      "zip_code": "5000",
+
+      "tax_id": "27281331189",
+
+      "external_id_type": "Customer",
+
+      "tax_id_type": "arg.cuit",
+
+      "name": "Jhon",
+
+      "cellphone": "11114567890",
+
+      "id": "48aa3855-b208-4ec6-89ab-bcf69ddc24eb",
+
+      "state": "X",
+
+      "email": "jhon.foo@email.com",
+
+      "owner_type": "ARG_PHYSICAL_PERSON"
+
+    },
+
+    "branch": {
+
+      "account_number": "1234567890",
+
+      "country": "ARG",
+
+      "address": {
+
+        "number": "200",
+
+        "street": "San Luis",
+
+        "notes": "Porton grande"
+
+      },
+
+      "external_id_type": "Branch",
+
+      "city": "Cordoba",
+
+      "name": "Sucursal Centro",
+
+      "cellphone": "1111456789",
+
+      "external_id": "1",
+
+      "id": "979b3ac5-061b-45db-b98e-4cd342bd99c0",
+
+      "state": "X",
+
+      "zip_code": "5000",
+
+      "email": "john.foo@email.com"
+
+    }
+
+  },
+
+  "payment_retries_allowed": 5,
+
+  "payment_gateway": [
+
+    {
+
+      "store_id": "galicia_adquirencia#2074",
+
+      "id": "sonqo"
+
+    },
+
+    {
+
+      "store_id": "391",
+
+      "id": "coelsa"
+
+    }
+
+  ],
+
+  "payment_attempts": {
+
+    "attempts": 0,
+
+    "payments": []
+
+  },
+
+  "additional_info": {},
+
+  "capture_data": {
+
+    "checkout_url": "https://sandbox-hosted-checkout.ranty.io/nave/sdk?payment_request_id=5782098f-d9eb-4161-bae6-65e3de006595",
+
+    "qr_data": "00020101021244360012com.naranjax9811306922647859901150150011272813311895204729953030325406177.005802AR5911Jhon Foo FC6007Cordoba61045000624005365782098f-d9eb-4161-bae6-65e3de0065956304F2C5"
+
+  },
+
+  "platform": {}
+
+}
+
+		
+
+Estados de una intención de pago
+Diagrama de estados de un pago
+Estado 	Descripción
+PENDING 	Solicitud creada, sin pagos asociados aún
+PROCESSED 	Solicitud con un pago iniciado
+DISABLED 	Intención desactivada antes de usarse
+SUCCESS_PROCESSED 	Pago aprobado
+FAILURE_PROCESSED 	Pago rechazado
+EXPIRED 	Intención vencida
+BLOCKED 	Intención bloqueada por fraude o intentos excedidos
+Cancelar una intención de pago
+Una intención activa puede cancelarse si aún no fue utilizada.
+Diagrama de cancelación de intencion de un pago
+📍 Endpoint Sandbox
+DELETE
+https://api-sandbox.ranty.io/api/payment_requests/{payment_request_id}
+📍 Endpoint Producción
+DELETE
+https://api.ranty.io/api/payment_requests/{payment_request_id}
+🔐 Headers
+Authorization:Bearer <token>
+Content-Type:application/json
+Respuesta esperada
+RESPONSE
+
+			
+{
+
+  "message": "Payment request deleted"
+
+}
+
+		
+
+Si no se puede cancelar, vas a recibir un código de error correspondiente.
+Cancelación de un pago
+Un pago puede cancelarse con el siguiente endpoint si está en estado APPROVED
+Diagrama de cancelación de un pago
+📍 Endpoint Sandbox
+DELETE
+https://api-sandbox.ranty.io/api/payments/{payment_id}
+📍 Endpoint Producción
+DELETE
+https://api.ranty.io/api/payments/{payment_id}
+🔐 Headers
+Authorization:Bearer <token>
+Content-Type:application/json
+Respuesta esperada
+RESPONSE
+
+			
+{
+
+  "status": "CANCELLING",
+
+  "message": "Payment {payment_id} pending to cancel"
+
+}
+
+		
+
+Errores comunes
+RESPONSE
+
+			
+{
+
+  "code": "payment_not_found",
+
+  "message": "Payment not found"
+
+}
+
+		
+
+RESPONSE
+
+			
+{
+
+  "code": "only_approved_operations_can_be_canceled",
+
+  "message": "Only Approved operations can be canceled. Payment status {payment.status}"
+
+}
+
+		
+
+RESPONSE
+
+			
+{
+
+  "code": "internal_server_error",
+
+  "message": "Servicio no disponible, por favor intente más tarde."
+
+}
+
+		
+
+Estados de pago cancelados
+Diagrama de estados de pago cancelado
+Proceso de cancelación
+Cuando se solicita la cancelación de un pago, el endpoint devuelve inicialmente el estado CANCELLING, lo que indica que el proceso está en curso.
+Este estado no significa que el pago ya fue cancelado.
+Notificación de estado final
+Una vez que la cancelación se procesa, recibirás una notificación con el estado definitivo del pago, que puede ser:
+Estado 	Descripción
+CANCELLED 	El pago fue cancelado exitosamente.
+REFUNDED 	El pago fue reembolsado exitosamente
+Si ocurre un error durante la cancelación, el sistema devolverá el estado APPROVED, que corresponde al estado original en el que se encontraba el pago antes de intentar la cancelación. Este comportamiento busca evitar confusiones sobre el estado real del pago mientras se procesa la cancelación.
+Renderizar QR en el frontend
+
+    Utilizar el atributo qr_data que lo conseguís cuando generas la intención de pago y lo renderizas con tu diseño.
+    Utilizar nuestra solución de renderizado con nuestro diseño, sin tener que hacer mayores esfuerzos.
+
+📍 URL Sandbox
+https://sandbox-ecommerce.ranty.io/galicia/nave/checkout?payment_request_id={...}&qr_data={...}
+📍 URL Producción
+https://ecommerce.ranty.io/galicia/nave/checkout?payment_request_id={...}&qr_data={...}
+Atributos necesarios
+Atributo 	Descripción
+payment_request_id 	Identificador de la intención de pago
+qr_data 	Datos para generar el QR
+Casos de uso
+Insertar un iframe en tu web para mostrar la URL del checkout. Se conecta vía WebSockets para actualizaciones en tiempo real.
+Eventos del modal de pago
+Te mostramos todos los eventos que podés capturar:
+Cerrar modal
+
+			
+{
+
+  "type": "PAYMENT_MODAL_RESPONSE",
+
+  "data": { success: true, closeModal: true }
+
+}
+
+		
+
+Aprobado
+
+			
+{
+
+  "type": "PAYMENT_MODAL_RESPONSE",
+
+  "data": { success: true }
+
+}
+
+		
+
+Vencido
+
+			
+{
+
+  "type": "PAYMENT_MODAL_RESPONSE",
+
+  "data": { success: false, expiration: true }
+
+}
+
+		
+
+Rechazado
+
+			
+{
+
+  "type": "PAYMENT_MODAL_RESPONSE",
+
+  "data": { success: false, rejected: true }
+
+}
+
+		
+
+Motivos de rechazo más frecuentes
+Código de error 	Mensaje
+denied 	Error con el proveedor de la tarjeta. Inténtalo de nuevo.
+no_amount_available 	La tarjeta no tiene fondos suficientes.
+account_identity_validation_error 	La información de la tarjeta no es válida.
+expired_card_invalid_expiry_date 	La fecha de vencimiento no es válida.
+denied_hold_card 	Tu banco rechazó la operación.
+invalid_merchant, system_error, gateway_timeout 	Error interno o con el proveedor de la tarjeta.
+gateway_not_available 	Error interno o con el proveedor.
+Tarjetas de prueba
+Marca 	Número 	Vencimiento 	CVV 	Estado
+Naranja crédito 	5895 6248 4026 3355 	04/40 	928 	APPROVED
+Naranja crédito 	5895 6248 9347 1379 	07/40 	374 	REJECTED
+Naranja crédito 	5895 6134 3478 9277 	04/40 	990 	REJECTED
+Visa crédito (1 cuota) 	4025 2200 0000 0139 	Cualquiera 	Cualquiera 	APPROVED
+Visa crédito (6 cuotas) 	4761 2299 9900 0231 	12/31 	078 	APPROVED
+Visa crédito (1 cuota) 	4025 2200 0000 0127 	Cualquiera 	Cualquiera 	REJECTED
+Visa crédito (1 cuota) 	4025 2200 0000 1040 	Cualquiera 	Cualquiera 	REJECTED

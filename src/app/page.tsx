@@ -7,9 +7,6 @@ export default function Home() {
     <div className="h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
       <section className="container mx-auto px-4 pt-6 flex-1 flex flex-col">
         <div className="text-center mb-4">
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold mb-2">
-            Bienvenido a <span className="text-primary">CAPOCANNONIERE</span>
-          </h1>
           <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
             Explorá nuestra línea de productos. Hacé click en las solapas o en las imágenes para ver cada producto.
           </p>
@@ -28,7 +25,7 @@ export default function Home() {
                 fill
                 className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
+              <div className="absolute inset-0 bg-linear-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
                 <span className="text-sm font-medium">{product.name}</span>
               </div>
             </Link>

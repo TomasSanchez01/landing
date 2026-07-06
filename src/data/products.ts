@@ -9,6 +9,7 @@ export interface Product {
   images: string[];
   videos: string[];
   price: string;
+  priceValue: number;
   storeUrl: string;
 }
 
@@ -32,6 +33,7 @@ export const products: Product[] = [
     ],
     videos: ["/products/producto-1/video-1.mp4"],
     price: "$299",
+    priceValue: 299,
     storeUrl: "https://tiendanube.com/producto-1",
   },
   {
@@ -53,6 +55,7 @@ export const products: Product[] = [
     ],
     videos: ["/products/producto-2/video-1.mp4"],
     price: "$399",
+    priceValue: 399,
     storeUrl: "https://tiendanube.com/producto-2",
   },
   {
@@ -74,6 +77,7 @@ export const products: Product[] = [
     ],
     videos: ["/products/producto-3/video-1.mp4"],
     price: "$499",
+    priceValue: 499,
     storeUrl: "https://tiendanube.com/producto-3",
   },
   {
@@ -95,6 +99,7 @@ export const products: Product[] = [
     ],
     videos: ["/products/producto-4/video-1.mp4"],
     price: "$599",
+    priceValue: 599,
     storeUrl: "https://tiendanube.com/producto-4",
   },
 ];
