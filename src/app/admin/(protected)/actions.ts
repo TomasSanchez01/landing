@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/firebase-admin";
+import { getDb } from "@/lib/firebase-admin";
 import { getAdminSession } from "@/lib/admin-session";
 import type { Product } from "@/lib/product-types";
 
@@ -24,7 +24,7 @@ export type ProductInput = Omit<Product, "id" | "createdAt" | "updatedAt">;
 export async function createProduct(input: ProductInput) {
   await requireAdmin();
 
-  const docRef = db.collection("products").doc();
+  const docRef = getDb().collection("products").doc();
   const now = Date.now();
   const product: Product = {
     ...input,
@@ -41,7 +41,7 @@ export async function createProduct(input: ProductInput) {
 export async function updateProduct(id: string, input: ProductInput) {
   await requireAdmin();
 
-  const docRef = db.collection("products").doc(id);
+  const docRef = getDb().collection("products").doc(id);
   const existing = await docRef.get();
   if (!existing.exists) {
     throw new Error("Producto no encontrado");
@@ -63,7 +63,7 @@ export async function updateProduct(id: string, input: ProductInput) {
 export async function deleteProduct(id: string) {
   await requireAdmin();
 
-  const docRef = db.collection("products").doc(id);
+  const docRef = getDb().collection("products").doc(id);
   const existing = await docRef.get();
   const slug = (existing.data() as Product | undefined)?.slug;
 
@@ -74,7 +74,7 @@ export async function deleteProduct(id: string) {
 export async function setPublished(id: string, published: boolean) {
   await requireAdmin();
 
-  const docRef = db.collection("products").doc(id);
+  const docRef = getDb().collection("products").doc(id);
   await docRef.update({ published, updatedAt: Date.now() });
 
   const data = (await docRef.get()).data() as Product | undefined;

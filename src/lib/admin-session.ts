@@ -1,6 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { adminAuth } from "@/lib/firebase-admin";
+import { getAdminAuth } from "@/lib/firebase-admin";
 
 export const SESSION_COOKIE_NAME = "admin_session";
 export const SESSION_EXPIRES_IN_MS = 5 * 24 * 60 * 60 * 1000; // 5 días
@@ -11,8 +11,9 @@ export async function getAdminSession() {
   if (!sessionCookie) return null;
 
   try {
-    return await adminAuth.verifySessionCookie(sessionCookie, true);
-  } catch {
+    return await getAdminAuth().verifySessionCookie(sessionCookie, true);
+  } catch (err) {
+    console.error("[admin-session] sesión inválida:", err);
     return null;
   }
 }

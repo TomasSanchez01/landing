@@ -1,22 +1,50 @@
 import "server-only";
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { getAuth, type Auth } from "firebase-admin/auth";
+import { getFirestore, type Firestore } from "firebase-admin/firestore";
+
+let app: App | undefined;
 
 function getAdminApp(): App {
-  const existing = getApps()[0];
-  if (existing) return existing;
+  if (app) return app;
 
-  return initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
+  const existing = getApps()[0];
+  if (existing) {
+    app = existing;
+    return app;
+  }
+
+  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+  const missing = [
+    !projectId && "FIREBASE_ADMIN_PROJECT_ID",
+    !clientEmail && "FIREBASE_ADMIN_CLIENT_EMAIL",
+    !privateKey && "FIREBASE_ADMIN_PRIVATE_KEY",
+  ].filter(Boolean);
+
+  if (missing.length > 0) {
+    throw new Error(`Faltan variables de entorno: ${missing.join(", ")}`);
+  }
+
+  if (!privateKey!.includes("BEGIN PRIVATE KEY")) {
+    throw new Error(
+      "FIREBASE_ADMIN_PRIVATE_KEY no tiene formato PEM válido (revisá que no tenga comillas de más o que falten los saltos de línea)"
+    );
+  }
+
+  app = initializeApp({
+    credential: cert({ projectId, clientEmail, privateKey }),
   });
+  return app;
 }
 
-const app = getAdminApp();
+/** Inicialización perezosa: el error de credenciales recién se lanza (y puede capturarse) cuando se usa de verdad, no al importar el módulo. */
+export function getDb(): Firestore {
+  return getFirestore(getAdminApp());
+}
 
-export const db = getFirestore(app);
-export const adminAuth = getAuth(app);
+export function getAdminAuth(): Auth {
+  return getAuth(getAdminApp());
+}

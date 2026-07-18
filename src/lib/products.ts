@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "@/lib/firebase-admin";
+import { getDb } from "@/lib/firebase-admin";
 import type { Product } from "@/lib/product-types";
 
 export type { Product, ConfigStep, ConfigOption } from "@/lib/product-types";
@@ -17,7 +17,7 @@ function sortSteps(product: Product): Product {
 }
 
 export async function getAllProducts(): Promise<Product[]> {
-  const snapshot = await db.collection(COLLECTION).orderBy("order", "asc").get();
+  const snapshot = await getDb().collection(COLLECTION).orderBy("order", "asc").get();
   return snapshot.docs.map((doc) => sortSteps(doc.data() as Product));
 }
 
@@ -27,13 +27,13 @@ export async function getPublishedProducts(): Promise<Product[]> {
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {
-  const doc = await db.collection(COLLECTION).doc(id).get();
+  const doc = await getDb().collection(COLLECTION).doc(id).get();
   if (!doc.exists) return undefined;
   return sortSteps(doc.data() as Product);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
-  const snapshot = await db
+  const snapshot = await getDb()
     .collection(COLLECTION)
     .where("slug", "==", slug)
     .limit(1)
