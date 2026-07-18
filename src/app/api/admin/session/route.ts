@@ -28,8 +28,10 @@ export async function POST(request: NextRequest) {
       maxAge: SESSION_EXPIRES_IN_MS / 1000,
     });
     return response;
-  } catch {
-    return NextResponse.json({ error: "No se pudo crear la sesión" }, { status: 401 });
+  } catch (err) {
+    console.error("[admin/session] error creando la sesión:", err);
+    const message = err instanceof Error ? err.message : "error desconocido";
+    return NextResponse.json({ error: "No se pudo crear la sesión", detail: message }, { status: 401 });
   }
 }
 

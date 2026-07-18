@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
 
+class SessionError extends Error {}
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -32,19 +34,26 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ idToken }),
       });
 
-      if (!res.ok) throw new Error("session error");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new SessionError(body.detail || "error desconocido");
+      }
 
       router.push("/admin");
       router.refresh();
     } catch (err) {
-      const code = (err as { code?: string })?.code;
-
-      if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
-        setError("Email o contraseña incorrectos.");
-      } else if (code) {
-        setError(`Error de Firebase Auth (${code}). Revisá la configuración.`);
+      if (err instanceof SessionError) {
+        setError(`No se pudo crear la sesión en el servidor: ${err.message}`);
       } else {
-        setError("No se pudo crear la sesión en el servidor. Revisá las credenciales de Firebase Admin.");
+        const code = (err as { code?: string })?.code;
+
+        if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
+          setError("Email o contraseña incorrectos.");
+        } else if (code) {
+          setError(`Error de Firebase Auth (${code}). Revisá la configuración.`);
+        } else {
+          setError("No se pudo iniciar sesión. Intentá de nuevo.");
+        }
       }
       setLoading(false);
     }
