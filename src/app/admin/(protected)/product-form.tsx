@@ -11,7 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { PriceCard } from "@/components/price-card";
 import { Plus, Trash2, GripVertical, AlertCircle, ImagePlus, Loader2 } from "lucide-react";
-import type { Product, ConfigStep, ConfigOption, OptionGroup } from "@/lib/product-types";
+import type {
+  Product,
+  ConfigStep,
+  ConfigOption,
+  OptionGroup,
+  ShippingZone,
+} from "@/lib/product-types";
 import { createProduct, updateProduct, type ProductInput } from "./actions";
 
 function newId() {
@@ -47,6 +53,10 @@ function emptyGroup(order: number): OptionGroup {
   return { id: newId(), name: "", order };
 }
 
+function emptyZone(): ShippingZone {
+  return { id: newId(), name: "", price: 0 };
+}
+
 function emptyProduct(): ProductInput {
   return {
     slug: "",
@@ -63,6 +73,7 @@ function emptyProduct(): ProductInput {
     installments: 1,
     published: false,
     comingSoon: false,
+    shippingZones: [],
     order: 0,
     steps: [],
   };
@@ -248,6 +259,75 @@ export function ProductForm({ product }: { product?: Product }) {
               installments={form.installments}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Zonas de envío</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Cada producto pesa distinto, así que el envío se configura por producto. El cliente
+            elige una de estas zonas al cotizar y el precio se suma al total.
+          </p>
+
+          {form.shippingZones.map((zone) => (
+            <div key={zone.id} className="flex gap-2 items-center">
+              <Input
+                placeholder="Nombre de la zona (ej: CABA)"
+                value={zone.name}
+                onChange={(e) =>
+                  update(
+                    "shippingZones",
+                    form.shippingZones.map((z) =>
+                      z.id === zone.id ? { ...z, name: e.target.value } : z
+                    )
+                  )
+                }
+                className="flex-1"
+              />
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="Precio"
+                value={zone.price}
+                onChange={(e) =>
+                  update(
+                    "shippingZones",
+                    form.shippingZones.map((z) =>
+                      z.id === zone.id ? { ...z, price: Number(e.target.value) } : z
+                    )
+                  )
+                }
+                className="w-32"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  update(
+                    "shippingZones",
+                    form.shippingZones.filter((z) => z.id !== zone.id)
+                  )
+                }
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          ))}
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => update("shippingZones", [...form.shippingZones, emptyZone()])}
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Agregar zona
+          </Button>
         </CardContent>
       </Card>
 

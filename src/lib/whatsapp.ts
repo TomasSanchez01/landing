@@ -1,5 +1,9 @@
-import { computeFinalPrice, type PaymentMethod, type Product } from "@/lib/product-types";
-import type { ShippingZone } from "@/lib/settings";
+import {
+  computeFinalPrice,
+  type PaymentMethod,
+  type Product,
+  type ShippingZone,
+} from "@/lib/product-types";
 import { formatPrice } from "@/lib/format";
 
 export function buildWhatsappMessage(

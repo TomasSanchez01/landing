@@ -8,7 +8,6 @@ import { formatPrice } from "@/lib/format";
 import { Check, MessageCircle } from "lucide-react";
 import type { ConfigOption, ConfigStep, PaymentMethod, Product } from "@/lib/product-types";
 import { computeFinalPrice } from "@/lib/product-types";
-import type { ShippingZone } from "@/lib/settings";
 import { buildWhatsappMessage, buildWhatsappUrl } from "@/lib/whatsapp";
 
 function groupOptions(step: ConfigStep): { ungrouped: ConfigOption[]; named: { id: string; name: string; options: ConfigOption[] }[] } {
@@ -97,11 +96,9 @@ function OptionCard({
 export function ProductConfigurator({
   product,
   whatsappPhone,
-  shippingZones,
 }: {
   product: Product;
   whatsappPhone: string;
-  shippingZones: ShippingZone[];
 }) {
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
@@ -109,6 +106,7 @@ export function ProductConfigurator({
   );
   const [shippingZoneId, setShippingZoneId] = useState<string>("");
 
+  const shippingZones = product.shippingZones;
   const needsPaymentChoice = product.installments > 1;
   const needsShipping = shippingZones.length > 0;
   const selectedZone = shippingZones.find((z) => z.id === shippingZoneId) ?? null;

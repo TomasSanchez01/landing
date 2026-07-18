@@ -4,6 +4,12 @@ export interface OptionGroup {
   order: number;
 }
 
+export interface ShippingZone {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface ConfigOption {
   id: string;
   label: string;
@@ -45,6 +51,8 @@ export interface Product {
   published: boolean;
   /** Aparece en la home como "Próximamente" pero no se puede entrar a su página de producto. */
   comingSoon: boolean;
+  /** Zonas de envío propias del producto (cada uno pesa distinto, el envío cambia). */
+  shippingZones: ShippingZone[];
   order: number;
   steps: ConfigStep[];
   createdAt: number;
