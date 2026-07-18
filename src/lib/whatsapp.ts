@@ -1,9 +1,10 @@
-import { computeFinalPrice, type Product } from "@/lib/product-types";
+import { computeFinalPrice, type PaymentMethod, type Product } from "@/lib/product-types";
 import { formatPrice } from "@/lib/format";
 
 export function buildWhatsappMessage(
   product: Product,
-  selections: Record<string, string>
+  selections: Record<string, string>,
+  paymentMethod: PaymentMethod = "cash"
 ): string {
   const lines = [`¡Hola! Quiero comprar este metegol:`, "", `*${product.name}*`];
 
@@ -18,12 +19,16 @@ export function buildWhatsappMessage(
       }
     }
 
-    const finalPrice = computeFinalPrice(product, selections);
+    const finalPrice = computeFinalPrice(product, selections, paymentMethod);
     lines.push("");
-    if (product.cashPrice < product.basePrice) {
-      lines.push(`Precio de lista: ${formatPrice(product.basePrice)}`);
+
+    if (paymentMethod === "installments" && product.installments > 1) {
+      lines.push(`Forma de pago: ${product.installments} cuotas`);
+      lines.push(`Precio total en cuotas: ${formatPrice(finalPrice)}`);
+    } else {
+      lines.push(`Forma de pago: Contado / transferencia`);
+      lines.push(`Precio estimado: ${formatPrice(finalPrice)}`);
     }
-    lines.push(`Precio estimado: ${formatPrice(finalPrice)}`);
   } else {
     lines.push("", `Precio: ${formatPrice(product.cashPrice)}`);
   }

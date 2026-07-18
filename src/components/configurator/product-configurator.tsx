@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/format";
 import { Check, MessageCircle } from "lucide-react";
-import type { ConfigOption, ConfigStep, Product } from "@/lib/product-types";
+import type { ConfigOption, ConfigStep, PaymentMethod, Product } from "@/lib/product-types";
 import { computeFinalPrice } from "@/lib/product-types";
 import { buildWhatsappMessage, buildWhatsappUrl } from "@/lib/whatsapp";
 
@@ -101,10 +101,14 @@ export function ProductConfigurator({
   whatsappPhone: string;
 }) {
   const [selections, setSelections] = useState<Record<string, string>>({});
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
+    product.installments > 1 ? null : "cash"
+  );
 
-  const message = buildWhatsappMessage(product, selections);
+  const needsPaymentChoice = product.installments > 1;
+  const message = buildWhatsappMessage(product, selections, paymentMethod ?? "cash");
 
-  if (product.steps.length === 0) {
+  if (product.steps.length === 0 && !needsPaymentChoice) {
     return (
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-border/50 bg-secondary/20 p-4">
         <div>
@@ -128,8 +132,9 @@ export function ProductConfigurator({
   };
 
   const selectedCount = product.steps.filter((s) => selections[s.id]).length;
-  const allSelected = selectedCount === product.steps.length;
-  const finalPrice = computeFinalPrice(product, selections);
+  const allStepsSelected = selectedCount === product.steps.length;
+  const canQuote = allStepsSelected && (!needsPaymentChoice || paymentMethod !== null);
+  const finalPrice = computeFinalPrice(product, selections, paymentMethod ?? "cash");
 
   return (
     <div className="space-y-6 pb-24">
@@ -176,16 +181,55 @@ export function ProductConfigurator({
         );
       })}
 
+      {needsPaymentChoice && (
+        <div>
+          <h3 className="text-base font-semibold mb-2">Forma de pago</h3>
+          <div className="grid grid-cols-2 gap-3 max-w-md">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("cash")}
+              className={cn(
+                "rounded-lg border p-3 text-left transition-all",
+                paymentMethod === "cash"
+                  ? "border-primary ring-2 ring-primary/50"
+                  : "border-border/50 hover:border-primary/50"
+              )}
+            >
+              <p className="text-xs text-muted-foreground">Contado / transferencia</p>
+              <p className="font-bold">{formatPrice(product.cashPrice)}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("installments")}
+              className={cn(
+                "rounded-lg border p-3 text-left transition-all",
+                paymentMethod === "installments"
+                  ? "border-primary ring-2 ring-primary/50"
+                  : "border-border/50 hover:border-primary/50"
+              )}
+            >
+              <p className="text-xs text-muted-foreground">{product.installments} cuotas</p>
+              <p className="font-bold">
+                {formatPrice(product.basePrice / product.installments)}
+                <span className="text-xs font-normal text-muted-foreground"> c/u</span>
+              </p>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="sticky bottom-4 rounded-xl border border-border/50 bg-background/95 backdrop-blur-md p-4 shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <p className="text-xs text-muted-foreground">
-            {allSelected
-              ? `${selectedCount} de ${product.steps.length} características elegidas`
-              : `Faltan ${product.steps.length - selectedCount} característica(s) por elegir`}
+            {!allStepsSelected
+              ? `Faltan ${product.steps.length - selectedCount} característica(s) por elegir`
+              : needsPaymentChoice && !paymentMethod
+              ? "Elegí una forma de pago"
+              : `${selectedCount} de ${product.steps.length} características elegidas`}
           </p>
           <p className="text-xl font-bold text-primary">{formatPrice(finalPrice)}</p>
         </div>
-        {allSelected ? (
+        {canQuote ? (
           <Button asChild size="lg">
             <a href={buildWhatsappUrl(message, whatsappPhone)} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="w-4 h-4 mr-2" />

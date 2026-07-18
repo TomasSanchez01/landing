@@ -40,20 +40,26 @@ export interface Product {
   /** Cantidad de cuotas para mostrar el precio en cuotas. 1 (o menos) = no se muestra el bloque de cuotas. */
   installments: number;
   published: boolean;
+  /** Aparece en la home como "Próximamente" pero no se puede entrar a su página de producto. */
+  comingSoon: boolean;
   order: number;
   steps: ConfigStep[];
   createdAt: number;
   updatedAt: number;
 }
 
+export type PaymentMethod = "cash" | "installments";
+
 export function computeFinalPrice(
   product: Product,
-  selections: Record<string, string>
+  selections: Record<string, string>,
+  paymentMethod: PaymentMethod = "cash"
 ): number {
   const modifiers = product.steps.reduce((sum, step) => {
     const optionId = selections[step.id];
     const option = step.options.find((o) => o.id === optionId);
     return sum + (option?.priceModifier ?? 0);
   }, 0);
-  return product.cashPrice + modifiers;
+  const base = paymentMethod === "installments" ? product.basePrice : product.cashPrice;
+  return base + modifiers;
 }

@@ -25,29 +25,25 @@ export function Navbar({ products }: { products: Product[] }) {
             />
           </Link>
 
-          <div className="hidden md:flex items-center gap-2">
-            {products.map((product) => {
-              const isActive = pathname === `/producto/${product.slug}`;
-              return (
-                <Link
-                  key={product.id}
-                  href={`/producto/${product.slug}`}
-                  className={cn(
-                    "relative w-30 h-16 rounded-lg transition-all duration-200 overflow-hidden",
-                    "hover:bg-secondary/50",
-                    isActive && "bg-secondary ring-2 ring-primary"
-                  )}
-                >
-                  <Image
-                    src={product.tabImage}
-                    alt={product.name}
-                    fill
-                    className="object-contain p-1"
-                    sizes="90px"
-                  />
-                </Link>
-              );
-            })}
+          <div className="hidden md:flex items-center gap-1">
+            {products
+              .filter((product) => !product.comingSoon)
+              .map((product) => {
+                const isActive = pathname === `/producto/${product.slug}`;
+                return (
+                  <Link
+                    key={product.id}
+                    href={`/producto/${product.slug}`}
+                    className={cn(
+                      "px-4 h-10 flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                      "hover:bg-secondary/50",
+                      isActive && "bg-secondary text-primary"
+                    )}
+                  >
+                    {product.name}
+                  </Link>
+                );
+              })}
           </div>
         </div>
       </div>

@@ -13,7 +13,7 @@ interface ProductPageProps {
 
 export async function generateStaticParams() {
   const products = await getPublishedProducts();
-  return products.map((product) => ({ slug: product.slug }));
+  return products.filter((p) => !p.comingSoon).map((product) => ({ slug: product.slug }));
 }
 
 export async function generateMetadata({ params }: ProductPageProps) {
@@ -37,7 +37,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     getSiteSettings(),
   ]);
 
-  if (!product || !product.published) {
+  if (!product || !product.published || product.comingSoon) {
     notFound();
   }
 

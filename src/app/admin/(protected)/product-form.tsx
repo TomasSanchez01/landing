@@ -61,6 +61,7 @@ function emptyProduct(): ProductInput {
     cashPrice: 0,
     installments: 1,
     published: false,
+    comingSoon: false,
     order: 0,
     steps: [],
   };
@@ -177,6 +178,19 @@ export function ProductForm({ product }: { product?: Product }) {
               className="w-4 h-4"
             />
             <Label htmlFor="published">Publicado (visible en el sitio)</Label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="comingSoon"
+              type="checkbox"
+              checked={form.comingSoon}
+              onChange={(e) => update("comingSoon", e.target.checked)}
+              className="w-4 h-4"
+            />
+            <Label htmlFor="comingSoon">
+              Próximamente (se ve en la home pero no se puede entrar a la página)
+            </Label>
           </div>
         </CardContent>
       </Card>
