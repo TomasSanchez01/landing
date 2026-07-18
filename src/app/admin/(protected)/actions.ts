@@ -27,8 +27,13 @@ export async function createProduct(input: ProductInput) {
 
   const docRef = getDb().collection("products").doc();
   const now = Date.now();
+
+  const lastSnap = await getDb().collection("products").orderBy("order", "desc").limit(1).get();
+  const nextOrder = lastSnap.empty ? 0 : (lastSnap.docs[0].data() as Product).order + 1;
+
   const product: Product = {
     ...input,
+    order: nextOrder,
     id: docRef.id,
     createdAt: now,
     updatedAt: now,
@@ -50,6 +55,7 @@ export async function updateProduct(id: string, input: ProductInput) {
 
   const product: Product = {
     ...input,
+    order: (existing.data() as Product).order,
     id,
     createdAt: (existing.data() as Product).createdAt,
     updatedAt: Date.now(),
@@ -59,6 +65,27 @@ export async function updateProduct(id: string, input: ProductInput) {
   revalidatePublicPaths(product.slug);
   revalidatePublicPaths((existing.data() as Product).slug);
   redirect("/admin");
+}
+
+export async function reorderProduct(id: string, direction: "up" | "down") {
+  await requireAdmin();
+
+  const snapshot = await getDb().collection("products").orderBy("order", "asc").get();
+  const ids = snapshot.docs.map((doc) => doc.id);
+
+  const index = ids.indexOf(id);
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (index === -1 || targetIndex < 0 || targetIndex >= ids.length) return;
+
+  [ids[index], ids[targetIndex]] = [ids[targetIndex], ids[index]];
+
+  const batch = getDb().batch();
+  ids.forEach((productId, i) => {
+    batch.update(getDb().collection("products").doc(productId), { order: i, updatedAt: Date.now() });
+  });
+  await batch.commit();
+
+  revalidatePublicPaths();
 }
 
 export async function deleteProduct(id: string) {

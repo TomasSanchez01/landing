@@ -5,6 +5,7 @@ import Image from "next/image";
 import { uploadAdminFile, deleteAdminFile } from "@/lib/admin-upload";
 import { Loader2, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UPLOAD_LIMITS } from "@/lib/upload-limits";
 
 interface ImageUploaderProps {
   value: string[];
@@ -32,16 +33,28 @@ export function ImageUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const limits = UPLOAD_LIMITS[kind];
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    setUploading(true);
     setError("");
 
-    try {
-      const uploads = await Promise.all(
-        Array.from(files).map((file) => uploadAdminFile(file, pathPrefix))
+    const list = Array.from(files);
+    const oversized = list.filter((file) => file.size > limits.maxMB * 1024 * 1024);
+    if (oversized.length > 0) {
+      setError(
+        `${oversized.map((f) => f.name).join(", ")} supera${
+          oversized.length > 1 ? "n" : ""
+        } el máximo de ${limits.maxMB} MB.`
       );
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const uploads = await Promise.all(list.map((file) => uploadAdminFile(file, pathPrefix)));
 
       onChange(multiple ? [...value, ...uploads] : uploads);
     } catch {
@@ -107,6 +120,10 @@ export function ImageUploader({
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
       />
+
+      <p className="text-xs text-muted-foreground">
+        {limits.formats} · Máx. {limits.maxMB} MB por archivo
+      </p>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>

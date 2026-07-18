@@ -10,7 +10,17 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUploader } from "@/components/ui/image-uploader";
 import { PriceCard } from "@/components/price-card";
-import { Plus, Trash2, GripVertical, AlertCircle, ImagePlus, Loader2 } from "lucide-react";
+import { UPLOAD_LIMITS } from "@/lib/upload-limits";
+import {
+  Plus,
+  Trash2,
+  GripVertical,
+  AlertCircle,
+  ImagePlus,
+  Loader2,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import type {
   Product,
   ConfigStep,
@@ -46,7 +56,7 @@ function labelFromFilename(filename: string) {
 }
 
 function emptyStep(order: number): ConfigStep {
-  return { id: newId(), name: "", order, groups: [], options: [emptyOption()] };
+  return { id: newId(), name: "", order, groups: [], options: [emptyOption()], selectionCount: 1 };
 }
 
 function emptyGroup(order: number): OptionGroup {
@@ -54,7 +64,7 @@ function emptyGroup(order: number): OptionGroup {
 }
 
 function emptyZone(): ShippingZone {
-  return { id: newId(), name: "", price: 0 };
+  return { id: newId(), name: "", price: 0, variantPrices: {} };
 }
 
 function emptyProduct(): ProductInput {
@@ -74,6 +84,7 @@ function emptyProduct(): ProductInput {
     published: false,
     comingSoon: false,
     shippingZones: [],
+    shippingVariantStepId: null,
     order: 0,
     steps: [],
   };
@@ -120,7 +131,8 @@ export function ProductForm({ product }: { product?: Product }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid lg:grid-cols-2 gap-6 items-start">
       <Card>
         <CardHeader>
           <CardTitle>Información general</CardTitle>
@@ -167,17 +179,6 @@ export function ProductForm({ product }: { product?: Product }) {
               value={form.longDescription}
               onChange={(e) => update("longDescription", e.target.value)}
               rows={4}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="order">Orden</Label>
-            <Input
-              id="order"
-              type="number"
-              className="max-w-32"
-              value={form.order}
-              onChange={(e) => update("order", Number(e.target.value))}
             />
           </div>
 
@@ -261,63 +262,145 @@ export function ProductForm({ product }: { product?: Product }) {
           </div>
         </CardContent>
       </Card>
+      </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Zonas de envío</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <p className="text-xs text-muted-foreground">
             Cada producto pesa distinto, así que el envío se configura por producto. El cliente
             elige una de estas zonas al cotizar y el precio se suma al total.
           </p>
 
-          {form.shippingZones.map((zone) => (
-            <div key={zone.id} className="flex gap-2 items-center">
-              <Input
-                placeholder="Nombre de la zona (ej: CABA)"
-                value={zone.name}
-                onChange={(e) =>
-                  update(
-                    "shippingZones",
-                    form.shippingZones.map((z) =>
-                      z.id === zone.id ? { ...z, name: e.target.value } : z
-                    )
-                  )
-                }
-                className="flex-1"
-              />
-              <Input
-                type="number"
-                min={0}
-                step="0.01"
-                placeholder="Precio"
-                value={zone.price}
-                onChange={(e) =>
-                  update(
-                    "shippingZones",
-                    form.shippingZones.map((z) =>
-                      z.id === zone.id ? { ...z, price: Number(e.target.value) } : z
-                    )
-                  )
-                }
-                className="w-32"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  update(
-                    "shippingZones",
-                    form.shippingZones.filter((z) => z.id !== zone.id)
-                  )
-                }
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
+          <div className="space-y-1.5">
+            <Label htmlFor="shippingVariantStep" className="text-xs text-muted-foreground">
+              ¿El precio de envío cambia según una característica?
+            </Label>
+            <select
+              id="shippingVariantStep"
+              value={form.shippingVariantStepId ?? ""}
+              onChange={(e) => {
+                const stepId = e.target.value || null;
+                update("shippingVariantStepId", stepId);
+                update(
+                  "shippingZones",
+                  form.shippingZones.map((z) => ({ ...z, variantPrices: {} }))
+                );
+              }}
+              className="w-full max-w-sm h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs dark:bg-input/30"
+            >
+              <option value="">No, precio fijo por zona</option>
+              {form.steps.map((step) => (
+                <option key={step.id} value={step.id}>
+                  {step.name || "(sin nombre)"}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Ej: en el CAPO 2.0 el envío cambia según si es Fijo o Elevable. Elegí esa
+              característica y vas a poder cargar un precio de envío distinto por cada opción.
+            </p>
+          </div>
+
+          {(() => {
+            const variantStep = form.shippingVariantStepId
+              ? form.steps.find((s) => s.id === form.shippingVariantStepId) ?? null
+              : null;
+
+            return form.shippingZones.map((zone) => (
+              <div key={zone.id} className="rounded-lg border border-border/50 p-3 space-y-2.5">
+                <div className="flex gap-2 items-center">
+                  <Input
+                    placeholder="Nombre de la zona (ej: CABA)"
+                    value={zone.name}
+                    onChange={(e) =>
+                      update(
+                        "shippingZones",
+                        form.shippingZones.map((z) =>
+                          z.id === zone.id ? { ...z, name: e.target.value } : z
+                        )
+                      )
+                    }
+                    className="flex-1"
+                  />
+                  {!variantStep && (
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="Precio"
+                      value={zone.price}
+                      onChange={(e) =>
+                        update(
+                          "shippingZones",
+                          form.shippingZones.map((z) =>
+                            z.id === zone.id ? { ...z, price: Number(e.target.value) } : z
+                          )
+                        )
+                      }
+                      className="w-32"
+                    />
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      update(
+                        "shippingZones",
+                        form.shippingZones.filter((z) => z.id !== zone.id)
+                      )
+                    }
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {variantStep && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pl-1">
+                    {variantStep.options.length === 0 && (
+                      <p className="text-xs text-muted-foreground col-span-full">
+                        Agregá opciones a &quot;{variantStep.name || "esa característica"}&quot;
+                        para poder cargar precios.
+                      </p>
+                    )}
+                    {variantStep.options.map((option) => (
+                      <div key={option.id} className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">
+                          {option.label || "(sin nombre)"}
+                        </Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="Precio"
+                          value={zone.variantPrices?.[option.id] ?? 0}
+                          onChange={(e) =>
+                            update(
+                              "shippingZones",
+                              form.shippingZones.map((z) =>
+                                z.id === zone.id
+                                  ? {
+                                      ...z,
+                                      variantPrices: {
+                                        ...z.variantPrices,
+                                        [option.id]: Number(e.target.value),
+                                      },
+                                    }
+                                  : z
+                              )
+                            )
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ));
+          })()}
 
           <Button
             type="button"
@@ -331,6 +414,7 @@ export function ProductForm({ product }: { product?: Product }) {
         </CardContent>
       </Card>
 
+      <div className="grid lg:grid-cols-2 gap-6 items-start">
       <Card>
         <CardHeader>
           <CardTitle>Imagen de navbar / tarjeta (estado normal)</CardTitle>
@@ -397,6 +481,7 @@ export function ProductForm({ product }: { product?: Product }) {
           />
         </CardContent>
       </Card>
+      </div>
 
       <Card>
         <CardHeader>
@@ -508,6 +593,14 @@ function StepsEditor({
     onChange([...steps, emptyStep(steps.length)]);
   };
 
+  const moveStep = (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= steps.length) return;
+    const next = [...steps];
+    [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+    onChange(next.map((s, i) => ({ ...s, order: i })));
+  };
+
   return (
     <div className="space-y-4">
       {steps.map((step, index) => (
@@ -519,6 +612,28 @@ function StepsEditor({
               value={step.name}
               onChange={(e) => updateStep(index, { name: e.target.value })}
             />
+            <div className="flex flex-col shrink-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                disabled={index === 0}
+                onClick={() => moveStep(index, "up")}
+                title="Subir"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                disabled={index === steps.length - 1}
+                onClick={() => moveStep(index, "down")}
+                title="Bajar"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </Button>
+            </div>
             <Button
               type="button"
               variant="ghost"
@@ -528,6 +643,31 @@ function StepsEditor({
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
+
+          <div className="flex items-center gap-2 pl-6">
+            <Label htmlFor={`selection-count-${step.id}`} className="text-xs text-muted-foreground shrink-0">
+              Cantidad a elegir
+            </Label>
+            <Input
+              id={`selection-count-${step.id}`}
+              type="number"
+              min={1}
+              value={step.selectionCount}
+              onChange={(e) =>
+                updateStep(index, { selectionCount: Math.max(1, Number(e.target.value)) })
+              }
+              className="w-20"
+            />
+            <p className="text-xs text-muted-foreground">
+              1 = elige una sola opción. Ej: 2 para elegir dos equipos.
+            </p>
+          </div>
+          {step.selectionCount > step.options.length && (
+            <p className="text-xs text-destructive pl-6">
+              Cargaste {step.options.length} opción(es) pero se piden {step.selectionCount}. El
+              cliente no va a poder completar este paso.
+            </p>
+          )}
 
           <GroupsEditor
             groups={step.groups}
@@ -696,14 +836,31 @@ function BulkOptionUploader({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    setError("");
+
+    const list = Array.from(files);
+    const oversized = list.filter(
+      (file) => file.size > UPLOAD_LIMITS.image.maxMB * 1024 * 1024
+    );
+    if (oversized.length > 0) {
+      setError(
+        `${oversized.map((f) => f.name).join(", ")} supera${
+          oversized.length > 1 ? "n" : ""
+        } el máximo de ${UPLOAD_LIMITS.image.maxMB} MB.`
+      );
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+
     setUploading(true);
 
     try {
       const created = await Promise.all(
-        Array.from(files).map(async (file) => {
+        list.map(async (file) => {
           const optionId = newId();
           const pathPrefix = `products/${slug || "nuevo"}/steps/${stepId}/${optionId}`;
           const url = await uploadAdminFile(file, pathPrefix);
@@ -724,7 +881,7 @@ function BulkOptionUploader({
   };
 
   return (
-    <>
+    <div className="space-y-1">
       <input
         ref={inputRef}
         type="file"
@@ -747,7 +904,11 @@ function BulkOptionUploader({
         )}
         Crear opciones desde imágenes
       </Button>
-    </>
+      <p className="text-xs text-muted-foreground">
+        {UPLOAD_LIMITS.image.formats} · Máx. {UPLOAD_LIMITS.image.maxMB} MB por archivo
+      </p>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
   );
 }
 

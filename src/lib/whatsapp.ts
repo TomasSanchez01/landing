@@ -1,5 +1,7 @@
 import {
   computeFinalPrice,
+  computeShippingPrice,
+  type ConfigSelections,
   type PaymentMethod,
   type Product,
   type ShippingZone,
@@ -8,7 +10,7 @@ import { formatPrice } from "@/lib/format";
 
 export function buildWhatsappMessage(
   product: Product,
-  selections: Record<string, string>,
+  selections: ConfigSelections,
   paymentMethod: PaymentMethod = "cash",
   shippingZone: ShippingZone | null = null
 ): string {
@@ -17,14 +19,18 @@ export function buildWhatsappMessage(
   if (product.steps.length > 0) {
     lines.push("");
     for (const step of product.steps) {
-      const option = step.options.find((o) => o.id === selections[step.id]);
-      if (option) {
-        lines.push(`- ${step.name}: ${option.label}`);
+      const optionIds = selections[step.id] ?? [];
+      const labels = optionIds
+        .map((id) => step.options.find((o) => o.id === id)?.label)
+        .filter((label): label is string => Boolean(label));
+      if (labels.length > 0) {
+        lines.push(`- ${step.name}: ${labels.join(", ")}`);
       }
     }
   }
 
-  const finalPrice = computeFinalPrice(product, selections, paymentMethod) + (shippingZone?.price ?? 0);
+  const shippingPrice = computeShippingPrice(product, shippingZone, selections);
+  const finalPrice = computeFinalPrice(product, selections, paymentMethod) + shippingPrice;
 
   lines.push("");
   if (paymentMethod === "installments" && product.installments > 1) {
@@ -34,7 +40,7 @@ export function buildWhatsappMessage(
   }
 
   if (shippingZone) {
-    lines.push(`Zona de envío: ${shippingZone.name} (+${formatPrice(shippingZone.price)})`);
+    lines.push(`Zona de envío: ${shippingZone.name} (+${formatPrice(shippingPrice)})`);
   }
 
   lines.push(`Precio estimado: ${formatPrice(finalPrice)}`);

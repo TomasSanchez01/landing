@@ -17,7 +17,11 @@ function normalizeProduct(product: Product): Product {
     installments: product.installments ?? 1,
     comingSoon: product.comingSoon ?? false,
     navbarImage: product.navbarImage || product.tabImage,
-    shippingZones: product.shippingZones ?? [],
+    shippingVariantStepId: product.shippingVariantStepId ?? null,
+    shippingZones: (product.shippingZones ?? []).map((zone) => ({
+      ...zone,
+      variantPrices: zone.variantPrices ?? {},
+    })),
     cashPrice:
       product.cashPrice ??
       (legacyDiscountPercent != null
@@ -25,7 +29,11 @@ function normalizeProduct(product: Product): Product {
         : product.basePrice),
     steps: [...product.steps]
       .sort((a, b) => a.order - b.order)
-      .map((step) => ({ ...step, groups: step.groups ?? [] })),
+      .map((step) => ({
+        ...step,
+        groups: step.groups ?? [],
+        selectionCount: step.selectionCount ?? 1,
+      })),
   };
 }
 

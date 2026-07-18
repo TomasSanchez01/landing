@@ -4,11 +4,19 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import { Pencil, Trash2, Eye, EyeOff, ChevronUp, ChevronDown } from "lucide-react";
 import type { Product } from "@/lib/product-types";
-import { deleteProduct, setPublished } from "./actions";
+import { deleteProduct, setPublished, reorderProduct } from "./actions";
 
-export function ProductRow({ product }: { product: Product }) {
+export function ProductRow({
+  product,
+  isFirst,
+  isLast,
+}: {
+  product: Product;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
   const [isPending, startTransition] = useTransition();
   const [removed, setRemoved] = useState(false);
 
@@ -26,8 +34,33 @@ export function ProductRow({ product }: { product: Product }) {
     startTransition(() => setPublished(product.id, !product.published));
   };
 
+  const handleMove = (direction: "up" | "down") => {
+    startTransition(() => reorderProduct(product.id, direction));
+  };
+
   return (
     <div className="flex items-center gap-4 p-4">
+      <div className="flex flex-col shrink-0">
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          disabled={isPending || isFirst}
+          onClick={() => handleMove("up")}
+          title="Subir"
+        >
+          <ChevronUp className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          disabled={isPending || isLast}
+          onClick={() => handleMove("down")}
+          title="Bajar"
+        >
+          <ChevronDown className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
       <div className="relative w-14 h-14 rounded-md overflow-hidden bg-secondary/20 shrink-0">
         {product.tabImage && (
           <Image src={product.tabImage} alt={product.name} fill className="object-contain p-1" sizes="56px" />

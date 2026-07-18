@@ -23,8 +23,13 @@ export default async function AdminDashboardPage() {
         <p className="text-muted-foreground">Todavía no hay productos cargados.</p>
       ) : (
         <div className="border border-border/50 rounded-lg divide-y divide-border/50">
-          {products.map((product) => (
-            <ProductRow key={product.id} product={product} />
+          {products.map((product, index) => (
+            <ProductRow
+              key={product.id}
+              product={product}
+              isFirst={index === 0}
+              isLast={index === products.length - 1}
+            />
           ))}
         </div>
       )}

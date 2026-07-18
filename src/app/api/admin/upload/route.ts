@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-session";
 import { getBucket } from "@/lib/firebase-admin";
+import { UPLOAD_LIMITS } from "@/lib/upload-limits";
 
 export async function POST(request: NextRequest) {
   const isAuthenticated = await getAdminSession();
@@ -15,6 +16,14 @@ export async function POST(request: NextRequest) {
 
     if (!(file instanceof File) || typeof pathPrefix !== "string" || !pathPrefix) {
       return NextResponse.json({ error: "Falta el archivo o el pathPrefix" }, { status: 400 });
+    }
+
+    const limits = file.type.startsWith("video/") ? UPLOAD_LIMITS.video : UPLOAD_LIMITS.image;
+    if (file.size > limits.maxMB * 1024 * 1024) {
+      return NextResponse.json(
+        { error: `El archivo supera el máximo permitido de ${limits.maxMB} MB.` },
+        { status: 400 }
+      );
     }
 
     const bucket = getBucket();

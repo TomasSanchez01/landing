@@ -6,8 +6,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/format";
 import { Check, MessageCircle } from "lucide-react";
-import type { ConfigOption, ConfigStep, PaymentMethod, Product } from "@/lib/product-types";
-import { computeFinalPrice } from "@/lib/product-types";
+import type {
+  ConfigOption,
+  ConfigSelections,
+  ConfigStep,
+  PaymentMethod,
+  Product,
+} from "@/lib/product-types";
+import { computeFinalPrice, computeShippingPrice } from "@/lib/product-types";
 import { buildWhatsappMessage, buildWhatsappUrl } from "@/lib/whatsapp";
 
 function groupOptions(step: ConfigStep): { ungrouped: ConfigOption[]; named: { id: string; name: string; options: ConfigOption[] }[] } {
@@ -30,11 +36,13 @@ function groupOptions(step: ConfigStep): { ungrouped: ConfigOption[]; named: { i
 function OptionCard({
   option,
   isSelected,
+  disabled = false,
   onSelect,
   size = "lg",
 }: {
   option: ConfigOption;
   isSelected: boolean;
+  disabled?: boolean;
   onSelect: () => void;
   size?: "lg" | "sm";
 }) {
@@ -44,12 +52,14 @@ function OptionCard({
     <button
       type="button"
       onClick={onSelect}
+      disabled={disabled}
       className={cn(
         "text-left rounded-lg border overflow-hidden transition-all shrink-0",
         isSmall ? "w-20" : "w-36 sm:w-40",
         isSelected
           ? "border-primary ring-2 ring-primary/50"
-          : "border-border/50 hover:border-primary/50"
+          : "border-border/50 hover:border-primary/50",
+        disabled && "opacity-40 pointer-events-none"
       )}
     >
       <div className={cn("relative bg-secondary/20", isSmall ? "aspect-square" : "aspect-4/3")}>
@@ -100,7 +110,7 @@ export function ProductConfigurator({
   product: Product;
   whatsappPhone: string;
 }) {
-  const [selections, setSelections] = useState<Record<string, string>>({});
+  const [selections, setSelections] = useState<ConfigSelections>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
     product.installments > 1 ? null : "cash"
   );
@@ -110,6 +120,12 @@ export function ProductConfigurator({
   const needsPaymentChoice = product.installments > 1;
   const needsShipping = shippingZones.length > 0;
   const selectedZone = shippingZones.find((z) => z.id === shippingZoneId) ?? null;
+  const shippingVariantStep = product.shippingVariantStepId
+    ? product.steps.find((s) => s.id === product.shippingVariantStepId) ?? null
+    : null;
+  const shippingVariantSelected = shippingVariantStep
+    ? Boolean(selections[shippingVariantStep.id]?.length)
+    : true;
 
   const message = buildWhatsappMessage(product, selections, paymentMethod ?? "cash", selectedZone);
 
@@ -132,27 +148,42 @@ export function ProductConfigurator({
     );
   }
 
-  const selectOption = (stepId: string, optionId: string) => {
-    setSelections((prev) => ({ ...prev, [stepId]: optionId }));
+  const selectOption = (step: ConfigStep, optionId: string) => {
+    setSelections((prev) => {
+      const current = prev[step.id] ?? [];
+
+      if (step.selectionCount <= 1) {
+        return { ...prev, [step.id]: [optionId] };
+      }
+      if (current.includes(optionId)) {
+        return { ...prev, [step.id]: current.filter((id) => id !== optionId) };
+      }
+      if (current.length >= step.selectionCount) {
+        return prev;
+      }
+      return { ...prev, [step.id]: [...current, optionId] };
+    });
   };
 
-  const selectedCount = product.steps.filter((s) => selections[s.id]).length;
-  const allStepsSelected = selectedCount === product.steps.length;
+  const isStepComplete = (step: ConfigStep) =>
+    (selections[step.id]?.length ?? 0) === step.selectionCount;
+  const completedStepsCount = product.steps.filter(isStepComplete).length;
+  const allStepsSelected = completedStepsCount === product.steps.length;
   const canQuote =
     allStepsSelected &&
     (!needsPaymentChoice || paymentMethod !== null) &&
     (!needsShipping || shippingZoneId !== "");
   const metegolPrice = computeFinalPrice(product, selections, paymentMethod ?? "cash");
-  const shippingPrice = selectedZone?.price ?? 0;
+  const shippingPrice = computeShippingPrice(product, selectedZone, selections);
   const finalPrice = metegolPrice + shippingPrice;
 
   const missingLabel = !allStepsSelected
-    ? `Faltan ${product.steps.length - selectedCount} característica(s) por elegir`
+    ? `Faltan ${product.steps.length - completedStepsCount} característica(s) por elegir`
     : needsPaymentChoice && !paymentMethod
     ? "Elegí una forma de pago"
     : needsShipping && !shippingZoneId
     ? "Elegí tu zona de envío"
-    : `${selectedCount} de ${product.steps.length} características elegidas`;
+    : `${completedStepsCount} de ${product.steps.length} características elegidas`;
 
   const paymentLabel = needsPaymentChoice
     ? paymentMethod === "installments"
@@ -164,22 +195,42 @@ export function ProductConfigurator({
     <div className="space-y-6 pb-24">
       {product.steps.map((step) => {
         const { ungrouped, named } = groupOptions(step);
+        const stepSelections = selections[step.id] ?? [];
+        const stepFull = stepSelections.length >= step.selectionCount;
 
         return (
           <div key={step.id}>
-            <h3 className="text-base font-semibold mb-2">{step.name}</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-base font-semibold">{step.name}</h3>
+              {step.selectionCount > 1 && (
+                <span
+                  className={cn(
+                    "text-xs font-medium",
+                    stepSelections.length === step.selectionCount
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  Elegí {stepSelections.length} de {step.selectionCount}
+                </span>
+              )}
+            </div>
 
             {ungrouped.length > 0 && (
               <div className="flex flex-wrap gap-3 mb-3">
-                {ungrouped.map((option) => (
-                  <OptionCard
-                    key={option.id}
-                    option={option}
-                    isSelected={selections[step.id] === option.id}
-                    onSelect={() => selectOption(step.id, option.id)}
-                    size="lg"
-                  />
-                ))}
+                {ungrouped.map((option) => {
+                  const isSelected = stepSelections.includes(option.id);
+                  return (
+                    <OptionCard
+                      key={option.id}
+                      option={option}
+                      isSelected={isSelected}
+                      disabled={!isSelected && stepFull}
+                      onSelect={() => selectOption(step, option.id)}
+                      size="lg"
+                    />
+                  );
+                })}
               </div>
             )}
 
@@ -189,15 +240,19 @@ export function ProductConfigurator({
                   {group.name}
                 </p>
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {group.options.map((option) => (
-                    <OptionCard
-                      key={option.id}
-                      option={option}
-                      isSelected={selections[step.id] === option.id}
-                      onSelect={() => selectOption(step.id, option.id)}
-                      size="sm"
-                    />
-                  ))}
+                  {group.options.map((option) => {
+                    const isSelected = stepSelections.includes(option.id);
+                    return (
+                      <OptionCard
+                        key={option.id}
+                        option={option}
+                        isSelected={isSelected}
+                        disabled={!isSelected && stepFull}
+                        onSelect={() => selectOption(step, option.id)}
+                        size="sm"
+                      />
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -253,10 +308,19 @@ export function ProductConfigurator({
             <option value="">Seleccioná tu zona</option>
             {shippingZones.map((zone) => (
               <option key={zone.id} value={zone.id}>
-                {zone.name} — {formatPrice(zone.price)}
+                {zone.name}
+                {shippingVariantSelected
+                  ? ` — ${formatPrice(computeShippingPrice(product, zone, selections))}`
+                  : ""}
               </option>
             ))}
           </select>
+          {shippingVariantStep && !shippingVariantSelected && (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Elegí primero &quot;{shippingVariantStep.name}&quot; arriba para ver el precio de
+              envío.
+            </p>
+          )}
         </div>
       )}
 
