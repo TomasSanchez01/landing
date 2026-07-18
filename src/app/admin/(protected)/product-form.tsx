@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { PriceCard } from "@/components/price-card";
 import { Plus, Trash2, GripVertical, AlertCircle, ImagePlus, Loader2 } from "lucide-react";
 import type { Product, ConfigStep, ConfigOption, OptionGroup } from "@/lib/product-types";
 import { createProduct, updateProduct, type ProductInput } from "./actions";
@@ -58,6 +59,7 @@ function emptyProduct(): ProductInput {
     videos: [],
     basePrice: 0,
     discountPercent: 0,
+    installments: 1,
     published: false,
     order: 0,
     steps: [],
@@ -155,38 +157,15 @@ export function ProductForm({ product }: { product?: Product }) {
             />
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="basePrice">Precio base</Label>
-              <Input
-                id="basePrice"
-                type="number"
-                min={0}
-                step="0.01"
-                value={form.basePrice}
-                onChange={(e) => update("basePrice", Number(e.target.value))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="discountPercent">Descuento (%)</Label>
-              <Input
-                id="discountPercent"
-                type="number"
-                min={0}
-                max={100}
-                value={form.discountPercent}
-                onChange={(e) => update("discountPercent", Number(e.target.value))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="order">Orden</Label>
-              <Input
-                id="order"
-                type="number"
-                value={form.order}
-                onChange={(e) => update("order", Number(e.target.value))}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="order">Orden</Label>
+            <Input
+              id="order"
+              type="number"
+              className="max-w-32"
+              value={form.order}
+              onChange={(e) => update("order", Number(e.target.value))}
+            />
           </div>
 
           <div className="flex items-center gap-2">
@@ -198,6 +177,58 @@ export function ProductForm({ product }: { product?: Product }) {
               className="w-4 h-4"
             />
             <Label htmlFor="published">Publicado (visible en el sitio)</Label>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Precio y cuotas</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="basePrice">Precio de lista</Label>
+              <Input
+                id="basePrice"
+                type="number"
+                min={0}
+                step="0.01"
+                value={form.basePrice}
+                onChange={(e) => update("basePrice", Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="discountPercent">Descuento contado (%)</Label>
+              <Input
+                id="discountPercent"
+                type="number"
+                min={0}
+                max={100}
+                value={form.discountPercent}
+                onChange={(e) => update("discountPercent", Number(e.target.value))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="installments">Cantidad de cuotas</Label>
+              <Input
+                id="installments"
+                type="number"
+                min={1}
+                value={form.installments}
+                onChange={(e) => update("installments", Math.max(1, Number(e.target.value)))}
+              />
+              <p className="text-xs text-muted-foreground">1 = no muestra el bloque de cuotas</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Vista previa</Label>
+            <PriceCard
+              basePrice={form.basePrice}
+              discountPercent={form.discountPercent}
+              installments={form.installments}
+            />
           </div>
         </CardContent>
       </Card>

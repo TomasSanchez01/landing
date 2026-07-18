@@ -1,14 +1,7 @@
 import { computeFinalPrice, type Product } from "@/lib/product-types";
+import { formatPrice } from "@/lib/format";
 
 const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "";
-
-function formatPrice(value: number): string {
-  return value.toLocaleString("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  });
-}
 
 export function buildWhatsappMessage(
   product: Product,

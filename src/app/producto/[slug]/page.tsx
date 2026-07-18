@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getPublishedProducts, getProductBySlug } from "@/lib/products";
 import { ProductConfigurator } from "@/components/configurator/product-configurator";
 import { ProductGallery } from "@/components/product-gallery";
+import { PriceCard } from "@/components/price-card";
 import { ChevronLeft, Check } from "lucide-react";
 
 interface ProductPageProps {
@@ -56,6 +57,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           <div className="space-y-3">
             <h1 className="text-2xl sm:text-3xl font-bold">{product.name}</h1>
+
+            <PriceCard
+              basePrice={product.basePrice}
+              discountPercent={product.discountPercent}
+              installments={product.installments}
+            />
 
             <p className="text-sm text-muted-foreground leading-relaxed">
               {product.longDescription}

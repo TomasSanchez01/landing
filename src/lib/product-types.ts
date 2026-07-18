@@ -35,6 +35,8 @@ export interface Product {
   videos: string[];
   basePrice: number;
   discountPercent: number;
+  /** Cantidad de cuotas para mostrar el precio en cuotas. 1 (o menos) = no se muestra el bloque de cuotas. */
+  installments: number;
   published: boolean;
   order: number;
   steps: ConfigStep[];

@@ -7,9 +7,10 @@ export { computeFinalPrice } from "@/lib/product-types";
 
 const COLLECTION = "products";
 
-function sortSteps(product: Product): Product {
+function normalizeProduct(product: Product): Product {
   return {
     ...product,
+    installments: product.installments ?? 1,
     steps: [...product.steps]
       .sort((a, b) => a.order - b.order)
       .map((step) => ({ ...step, groups: step.groups ?? [] })),
@@ -18,7 +19,7 @@ function sortSteps(product: Product): Product {
 
 export async function getAllProducts(): Promise<Product[]> {
   const snapshot = await getDb().collection(COLLECTION).orderBy("order", "asc").get();
-  return snapshot.docs.map((doc) => sortSteps(doc.data() as Product));
+  return snapshot.docs.map((doc) => normalizeProduct(doc.data() as Product));
 }
 
 export async function getPublishedProducts(): Promise<Product[]> {
@@ -29,7 +30,7 @@ export async function getPublishedProducts(): Promise<Product[]> {
 export async function getProductById(id: string): Promise<Product | undefined> {
   const doc = await getDb().collection(COLLECTION).doc(id).get();
   if (!doc.exists) return undefined;
-  return sortSteps(doc.data() as Product);
+  return normalizeProduct(doc.data() as Product);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
@@ -39,5 +40,5 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
     .limit(1)
     .get();
   if (snapshot.empty) return undefined;
-  return sortSteps(snapshot.docs[0].data() as Product);
+  return normalizeProduct(snapshot.docs[0].data() as Product);
 }

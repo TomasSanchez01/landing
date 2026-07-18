@@ -4,18 +4,11 @@ import { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatPrice } from "@/lib/format";
 import { Check, MessageCircle } from "lucide-react";
 import type { ConfigOption, ConfigStep, Product } from "@/lib/product-types";
 import { computeFinalPrice } from "@/lib/product-types";
 import { buildWhatsappMessage, buildWhatsappUrl } from "@/lib/whatsapp";
-
-function formatPrice(value: number) {
-  return value.toLocaleString("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  });
-}
 
 function groupOptions(step: ConfigStep): { ungrouped: ConfigOption[]; named: { id: string; name: string; options: ConfigOption[] }[] } {
   const ungrouped = step.options.filter(
@@ -38,42 +31,59 @@ function OptionCard({
   option,
   isSelected,
   onSelect,
+  size = "lg",
 }: {
   option: ConfigOption;
   isSelected: boolean;
   onSelect: () => void;
+  size?: "lg" | "sm";
 }) {
+  const isSmall = size === "sm";
+
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
-        "text-left rounded-lg border overflow-hidden transition-all shrink-0 w-20",
+        "text-left rounded-lg border overflow-hidden transition-all shrink-0",
+        isSmall ? "w-20" : "w-36 sm:w-40",
         isSelected
           ? "border-primary ring-2 ring-primary/50"
           : "border-border/50 hover:border-primary/50"
       )}
     >
-      <div className="aspect-square relative bg-secondary/20">
+      <div className={cn("relative bg-secondary/20", isSmall ? "aspect-square" : "aspect-4/3")}>
         {option.images[0] && (
           <Image
             src={option.images[0]}
             alt={option.label}
             fill
-            className="object-contain p-1.5"
-            sizes="80px"
+            className={cn("object-contain", isSmall ? "p-1.5" : "p-2.5")}
+            sizes={isSmall ? "80px" : "160px"}
           />
         )}
         {isSelected && (
-          <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
-            <Check className="w-2.5 h-2.5" />
+          <div
+            className={cn(
+              "absolute bg-primary text-primary-foreground rounded-full",
+              isSmall ? "top-1 right-1 p-0.5" : "top-1.5 right-1.5 p-1"
+            )}
+          >
+            <Check className={isSmall ? "w-2.5 h-2.5" : "w-3.5 h-3.5"} />
           </div>
         )}
       </div>
-      <div className="px-1.5 py-1">
-        <p className="font-medium text-[10px] leading-tight line-clamp-2">{option.label}</p>
+      <div className={isSmall ? "px-1.5 py-1" : "px-2 py-2"}>
+        <p
+          className={cn(
+            "font-medium leading-tight line-clamp-2",
+            isSmall ? "text-[10px]" : "text-xs"
+          )}
+        >
+          {option.label}
+        </p>
         {option.priceModifier !== 0 && (
-          <p className="text-[9px] text-muted-foreground">
+          <p className={cn("text-muted-foreground", isSmall ? "text-[9px]" : "text-[11px]")}>
             {option.priceModifier > 0 ? "+" : ""}
             {formatPrice(option.priceModifier)}
           </p>
@@ -125,13 +135,14 @@ export function ProductConfigurator({ product }: { product: Product }) {
             <h3 className="text-base font-semibold mb-2">{step.name}</h3>
 
             {ungrouped.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 mb-3">
+              <div className="flex flex-wrap gap-3 mb-3">
                 {ungrouped.map((option) => (
                   <OptionCard
                     key={option.id}
                     option={option}
                     isSelected={selections[step.id] === option.id}
                     onSelect={() => selectOption(step.id, option.id)}
+                    size="lg"
                   />
                 ))}
               </div>
@@ -149,6 +160,7 @@ export function ProductConfigurator({ product }: { product: Product }) {
                       option={option}
                       isSelected={selections[step.id] === option.id}
                       onSelect={() => selectOption(step.id, option.id)}
+                      size="sm"
                     />
                   ))}
                 </div>
