@@ -17,7 +17,7 @@ export default async function Home() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {products.map((product) => {
           const cardClass = cn(
-            "group relative aspect-3/4 rounded-xl overflow-hidden border border-border/50 bg-secondary/20 transition-all duration-300",
+            "group relative aspect-2/3 rounded-xl overflow-hidden border border-border/50 bg-secondary/20 transition-all duration-300",
             product.comingSoon ? "cursor-not-allowed" : "hover:border-primary/50"
           );
 
