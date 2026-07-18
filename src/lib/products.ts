@@ -16,6 +16,7 @@ function normalizeProduct(product: Product): Product {
     ...product,
     installments: product.installments ?? 1,
     comingSoon: product.comingSoon ?? false,
+    navbarImage: product.navbarImage || product.tabImage,
     cashPrice:
       product.cashPrice ??
       (legacyDiscountPercent != null

@@ -27,7 +27,10 @@ export interface Product {
   id: string;
   slug: string;
   name: string;
+  /** Imagen de la tarjeta en la home. */
   tabImage: string;
+  /** Imagen del tab en el navbar (distinta a la de la tarjeta de inicio). */
+  navbarImage: string;
   description: string;
   longDescription: string;
   features: string[];

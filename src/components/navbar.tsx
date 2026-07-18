@@ -25,7 +25,7 @@ export function Navbar({ products }: { products: Product[] }) {
             />
           </Link>
 
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-2">
             {products
               .filter((product) => !product.comingSoon)
               .map((product) => {
@@ -35,12 +35,18 @@ export function Navbar({ products }: { products: Product[] }) {
                     key={product.id}
                     href={`/producto/${product.slug}`}
                     className={cn(
-                      "px-4 h-10 flex items-center rounded-lg text-sm font-medium transition-all duration-200",
+                      "relative w-30 h-16 rounded-lg transition-all duration-200 overflow-hidden",
                       "hover:bg-secondary/50",
-                      isActive && "bg-secondary text-primary"
+                      isActive && "bg-secondary ring-2 ring-primary"
                     )}
                   >
-                    {product.name}
+                    <Image
+                      src={product.navbarImage}
+                      alt={product.name}
+                      fill
+                      className="object-contain p-1"
+                      sizes="90px"
+                    />
                   </Link>
                 );
               })}

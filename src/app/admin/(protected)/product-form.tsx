@@ -52,6 +52,7 @@ function emptyProduct(): ProductInput {
     slug: "",
     name: "",
     tabImage: "",
+    navbarImage: "",
     description: "",
     longDescription: "",
     features: [],
@@ -252,7 +253,7 @@ export function ProductForm({ product }: { product?: Product }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Imagen de solapa</CardTitle>
+          <CardTitle>Imagen de tarjeta (home)</CardTitle>
         </CardHeader>
         <CardContent>
           <ImageUploader
@@ -260,7 +261,22 @@ export function ProductForm({ product }: { product?: Product }) {
             onChange={(urls) => update("tabImage", urls[urls.length - 1] ?? "")}
             pathPrefix={`products/${form.slug || "nuevo"}/tab`}
             multiple={false}
-            label="Solapa"
+            label="Tarjeta"
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Imagen de navbar</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ImageUploader
+            value={form.navbarImage ? [form.navbarImage] : []}
+            onChange={(urls) => update("navbarImage", urls[urls.length - 1] ?? "")}
+            pathPrefix={`products/${form.slug || "nuevo"}/navbar`}
+            multiple={false}
+            label="Navbar"
           />
         </CardContent>
       </Card>
