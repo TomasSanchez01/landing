@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  // firebase-admin (via jose/jwks-rsa) mezcla ESM/CJS de una forma que el
+  // bundler de Next no resuelve bien; lo dejamos afuera del bundle para que
+  // se cargue nativo en runtime (evita el crash ERR_REQUIRE_ESM en Vercel).
+  serverExternalPackages: ["firebase-admin"],
   images: {
     remotePatterns: [
       {
