@@ -25,7 +25,7 @@ export default async function Home() {
                 src={product.tabImage}
                 alt={product.name}
                 fill
-                className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
               />
               <div className="absolute inset-0 bg-linear-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
                 <span className="text-sm font-medium">{product.name}</span>
