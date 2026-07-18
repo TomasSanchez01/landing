@@ -25,7 +25,7 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      const credential = await signInWithEmailAndPassword(clientAuth, email, password);
+      const credential = await signInWithEmailAndPassword(clientAuth, email.trim(), password);
       const idToken = await credential.user.getIdToken();
 
       const res = await fetch("/api/admin/session", {
