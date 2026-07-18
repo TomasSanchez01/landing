@@ -48,32 +48,32 @@ function OptionCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "text-left rounded-lg border overflow-hidden transition-all",
+        "text-left rounded-lg border overflow-hidden transition-all shrink-0 w-20",
         isSelected
           ? "border-primary ring-2 ring-primary/50"
           : "border-border/50 hover:border-primary/50"
       )}
     >
-      <div className="aspect-4/3 relative bg-secondary/20">
+      <div className="aspect-square relative bg-secondary/20">
         {option.images[0] && (
           <Image
             src={option.images[0]}
             alt={option.label}
             fill
-            className="object-contain p-2"
-            sizes="200px"
+            className="object-contain p-1.5"
+            sizes="80px"
           />
         )}
         {isSelected && (
-          <div className="absolute top-1.5 right-1.5 bg-primary text-primary-foreground rounded-full p-0.5">
-            <Check className="w-3 h-3" />
+          <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
+            <Check className="w-2.5 h-2.5" />
           </div>
         )}
       </div>
-      <div className="px-2 py-1.5">
-        <p className="font-medium text-xs leading-tight">{option.label}</p>
+      <div className="px-1.5 py-1">
+        <p className="font-medium text-[10px] leading-tight line-clamp-2">{option.label}</p>
         {option.priceModifier !== 0 && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[9px] text-muted-foreground">
             {option.priceModifier > 0 ? "+" : ""}
             {formatPrice(option.priceModifier)}
           </p>
@@ -125,7 +125,7 @@ export function ProductConfigurator({ product }: { product: Product }) {
             <h3 className="text-base font-semibold mb-2">{step.name}</h3>
 
             {ungrouped.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 mb-3">
+              <div className="flex gap-2 overflow-x-auto pb-1 mb-3">
                 {ungrouped.map((option) => (
                   <OptionCard
                     key={option.id}
@@ -142,7 +142,7 @@ export function ProductConfigurator({ product }: { product: Product }) {
                 <p className="text-sm font-medium text-muted-foreground mb-1.5">
                   {group.name}
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                <div className="flex gap-2 overflow-x-auto pb-1">
                   {group.options.map((option) => (
                     <OptionCard
                       key={option.id}
