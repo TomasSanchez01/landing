@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/format";
 import { Check, MessageCircle } from "lucide-react";
 import type { ConfigOption, ConfigStep, PaymentMethod, Product } from "@/lib/product-types";
 import { computeFinalPrice } from "@/lib/product-types";
+import type { ShippingZone } from "@/lib/settings";
 import { buildWhatsappMessage, buildWhatsappUrl } from "@/lib/whatsapp";
 
 function groupOptions(step: ConfigStep): { ungrouped: ConfigOption[]; named: { id: string; name: string; options: ConfigOption[] }[] } {
@@ -96,19 +97,25 @@ function OptionCard({
 export function ProductConfigurator({
   product,
   whatsappPhone,
+  shippingZones,
 }: {
   product: Product;
   whatsappPhone: string;
+  shippingZones: ShippingZone[];
 }) {
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
     product.installments > 1 ? null : "cash"
   );
+  const [shippingZoneId, setShippingZoneId] = useState<string>("");
 
   const needsPaymentChoice = product.installments > 1;
-  const message = buildWhatsappMessage(product, selections, paymentMethod ?? "cash");
+  const needsShipping = shippingZones.length > 0;
+  const selectedZone = shippingZones.find((z) => z.id === shippingZoneId) ?? null;
 
-  if (product.steps.length === 0 && !needsPaymentChoice) {
+  const message = buildWhatsappMessage(product, selections, paymentMethod ?? "cash", selectedZone);
+
+  if (product.steps.length === 0 && !needsPaymentChoice && !needsShipping) {
     return (
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-border/50 bg-secondary/20 p-4">
         <div>
@@ -133,8 +140,20 @@ export function ProductConfigurator({
 
   const selectedCount = product.steps.filter((s) => selections[s.id]).length;
   const allStepsSelected = selectedCount === product.steps.length;
-  const canQuote = allStepsSelected && (!needsPaymentChoice || paymentMethod !== null);
-  const finalPrice = computeFinalPrice(product, selections, paymentMethod ?? "cash");
+  const canQuote =
+    allStepsSelected &&
+    (!needsPaymentChoice || paymentMethod !== null) &&
+    (!needsShipping || shippingZoneId !== "");
+  const finalPrice =
+    computeFinalPrice(product, selections, paymentMethod ?? "cash") + (selectedZone?.price ?? 0);
+
+  const missingLabel = !allStepsSelected
+    ? `Faltan ${product.steps.length - selectedCount} característica(s) por elegir`
+    : needsPaymentChoice && !paymentMethod
+    ? "Elegí una forma de pago"
+    : needsShipping && !shippingZoneId
+    ? "Elegí tu zona de envío"
+    : `${selectedCount} de ${product.steps.length} características elegidas`;
 
   return (
     <div className="space-y-6 pb-24">
@@ -218,15 +237,27 @@ export function ProductConfigurator({
         </div>
       )}
 
+      {needsShipping && (
+        <div>
+          <h3 className="text-base font-semibold mb-2">Zona de envío</h3>
+          <select
+            value={shippingZoneId}
+            onChange={(e) => setShippingZoneId(e.target.value)}
+            className="w-full max-w-md h-10 rounded-lg border border-input bg-transparent px-3 text-sm shadow-xs dark:bg-input/30"
+          >
+            <option value="">Seleccioná tu zona</option>
+            {shippingZones.map((zone) => (
+              <option key={zone.id} value={zone.id}>
+                {zone.name} — {formatPrice(zone.price)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="sticky bottom-4 rounded-xl border border-border/50 bg-background/95 backdrop-blur-md p-4 shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <p className="text-xs text-muted-foreground">
-            {!allStepsSelected
-              ? `Faltan ${product.steps.length - selectedCount} característica(s) por elegir`
-              : needsPaymentChoice && !paymentMethod
-              ? "Elegí una forma de pago"
-              : `${selectedCount} de ${product.steps.length} características elegidas`}
-          </p>
+          <p className="text-xs text-muted-foreground">{missingLabel}</p>
           <p className="text-xl font-bold text-primary">{formatPrice(finalPrice)}</p>
         </div>
         {canQuote ? (

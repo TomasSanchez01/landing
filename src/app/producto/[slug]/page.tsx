@@ -90,7 +90,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <section>
           <h2 className="text-xl font-bold mb-4">Armá tu metegol</h2>
-          <ProductConfigurator product={product} whatsappPhone={settings.whatsappPhone} />
+          <ProductConfigurator
+            product={product}
+            whatsappPhone={settings.whatsappPhone}
+            shippingZones={settings.shippingZones}
+          />
         </section>
       </div>
     </div>
