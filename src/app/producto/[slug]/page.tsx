@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublishedProducts, getProductBySlug } from "@/lib/products";
+import { getSiteSettings } from "@/lib/settings";
 import { ProductConfigurator } from "@/components/configurator/product-configurator";
 import { ProductGallery } from "@/components/product-gallery";
 import { PriceCard } from "@/components/price-card";
@@ -31,7 +32,10 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const [product, settings] = await Promise.all([
+    getProductBySlug(slug),
+    getSiteSettings(),
+  ]);
 
   if (!product || !product.published) {
     notFound();
@@ -60,7 +64,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             <PriceCard
               basePrice={product.basePrice}
-              discountPercent={product.discountPercent}
+              cashPrice={product.cashPrice}
               installments={product.installments}
             />
 
@@ -86,7 +90,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <section>
           <h2 className="text-xl font-bold mb-4">Armá tu metegol</h2>
-          <ProductConfigurator product={product} />
+          <ProductConfigurator product={product} whatsappPhone={settings.whatsappPhone} />
         </section>
       </div>
     </div>

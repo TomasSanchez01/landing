@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getDb } from "@/lib/firebase-admin";
 import { getAdminSession } from "@/lib/admin-session";
+import { saveSiteSettings, type SiteSettings } from "@/lib/settings";
 import type { Product } from "@/lib/product-types";
 
 async function requireAdmin() {
@@ -79,4 +80,11 @@ export async function setPublished(id: string, published: boolean) {
 
   const data = (await docRef.get()).data() as Product | undefined;
   revalidatePublicPaths(data?.slug);
+}
+
+export async function updateSiteSettings(settings: SiteSettings) {
+  await requireAdmin();
+
+  await saveSiteSettings(settings);
+  revalidatePath("/", "layout");
 }

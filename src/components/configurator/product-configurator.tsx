@@ -93,7 +93,13 @@ function OptionCard({
   );
 }
 
-export function ProductConfigurator({ product }: { product: Product }) {
+export function ProductConfigurator({
+  product,
+  whatsappPhone,
+}: {
+  product: Product;
+  whatsappPhone: string;
+}) {
   const [selections, setSelections] = useState<Record<string, string>>({});
 
   const message = buildWhatsappMessage(product, selections);
@@ -102,13 +108,13 @@ export function ProductConfigurator({ product }: { product: Product }) {
     return (
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-border/50 bg-secondary/20 p-4">
         <div>
-          <p className="font-medium">{formatPrice(product.basePrice)}</p>
+          <p className="font-medium">{formatPrice(product.cashPrice)}</p>
           <p className="text-sm text-muted-foreground">
             Consultanos por este producto y te cotizamos al instante.
           </p>
         </div>
         <Button asChild>
-          <a href={buildWhatsappUrl(message)} target="_blank" rel="noopener noreferrer">
+          <a href={buildWhatsappUrl(message, whatsappPhone)} target="_blank" rel="noopener noreferrer">
             <MessageCircle className="w-4 h-4 mr-2" />
             Consultar por WhatsApp
           </a>
@@ -181,7 +187,7 @@ export function ProductConfigurator({ product }: { product: Product }) {
         </div>
         {allSelected ? (
           <Button asChild size="lg">
-            <a href={buildWhatsappUrl(message)} target="_blank" rel="noopener noreferrer">
+            <a href={buildWhatsappUrl(message, whatsappPhone)} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="w-4 h-4 mr-2" />
               Agregar al carrito
             </a>

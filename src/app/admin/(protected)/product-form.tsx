@@ -58,7 +58,7 @@ function emptyProduct(): ProductInput {
     images: [],
     videos: [],
     basePrice: 0,
-    discountPercent: 0,
+    cashPrice: 0,
     installments: 1,
     published: false,
     order: 0,
@@ -199,15 +199,18 @@ export function ProductForm({ product }: { product?: Product }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="discountPercent">Descuento contado (%)</Label>
+              <Label htmlFor="cashPrice">Precio contado / transferencia</Label>
               <Input
-                id="discountPercent"
+                id="cashPrice"
                 type="number"
                 min={0}
-                max={100}
-                value={form.discountPercent}
-                onChange={(e) => update("discountPercent", Number(e.target.value))}
+                step="0.01"
+                value={form.cashPrice}
+                onChange={(e) => update("cashPrice", Number(e.target.value))}
               />
+              <p className="text-xs text-muted-foreground">
+                No se calcula automático del precio de lista, se carga directo.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="installments">Cantidad de cuotas</Label>
@@ -226,7 +229,7 @@ export function ProductForm({ product }: { product?: Product }) {
             <Label className="text-xs text-muted-foreground">Vista previa</Label>
             <PriceCard
               basePrice={form.basePrice}
-              discountPercent={form.discountPercent}
+              cashPrice={form.cashPrice}
               installments={form.installments}
             />
           </div>

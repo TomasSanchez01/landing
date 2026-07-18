@@ -1,8 +1,6 @@
 import { computeFinalPrice, type Product } from "@/lib/product-types";
 import { formatPrice } from "@/lib/format";
 
-const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "";
-
 export function buildWhatsappMessage(
   product: Product,
   selections: Record<string, string>
@@ -22,14 +20,12 @@ export function buildWhatsappMessage(
 
     const finalPrice = computeFinalPrice(product, selections);
     lines.push("");
-    if (product.discountPercent > 0) {
-      lines.push(
-        `Precio base: ${formatPrice(product.basePrice)} (-${product.discountPercent}%)`
-      );
+    if (product.cashPrice < product.basePrice) {
+      lines.push(`Precio de lista: ${formatPrice(product.basePrice)}`);
     }
     lines.push(`Precio estimado: ${formatPrice(finalPrice)}`);
   } else {
-    lines.push("", `Precio: ${formatPrice(product.basePrice)}`);
+    lines.push("", `Precio: ${formatPrice(product.cashPrice)}`);
   }
 
   lines.push("", "¿Me pasás más info?");
@@ -37,6 +33,6 @@ export function buildWhatsappMessage(
   return lines.join("\n");
 }
 
-export function buildWhatsappUrl(message: string): string {
-  return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
+export function buildWhatsappUrl(message: string, phone: string): string {
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }

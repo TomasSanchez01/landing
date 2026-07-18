@@ -33,8 +33,10 @@ export interface Product {
   features: string[];
   images: string[];
   videos: string[];
+  /** Precio de lista / total pagando en cuotas. */
   basePrice: number;
-  discountPercent: number;
+  /** Precio pagando contado/transferencia. Se carga directo, no se calcula como % del basePrice. */
+  cashPrice: number;
   /** Cantidad de cuotas para mostrar el precio en cuotas. 1 (o menos) = no se muestra el bloque de cuotas. */
   installments: number;
   published: boolean;
@@ -48,11 +50,10 @@ export function computeFinalPrice(
   product: Product,
   selections: Record<string, string>
 ): number {
-  const discounted = product.basePrice * (1 - product.discountPercent / 100);
   const modifiers = product.steps.reduce((sum, step) => {
     const optionId = selections[step.id];
     const option = step.options.find((o) => o.id === optionId);
     return sum + (option?.priceModifier ?? 0);
   }, 0);
-  return discounted + modifiers;
+  return product.cashPrice + modifiers;
 }

@@ -2,14 +2,15 @@ import { formatPrice } from "@/lib/format";
 
 interface PriceCardProps {
   basePrice: number;
-  discountPercent: number;
+  cashPrice: number;
   installments: number;
 }
 
-export function PriceCard({ basePrice, discountPercent, installments }: PriceCardProps) {
-  const cashPrice = basePrice * (1 - discountPercent / 100);
+export function PriceCard({ basePrice, cashPrice, installments }: PriceCardProps) {
   const hasInstallments = installments > 1;
   const installmentAmount = basePrice / installments;
+  const hasDiscount = cashPrice > 0 && cashPrice < basePrice;
+  const discountPercent = hasDiscount ? Math.round((1 - cashPrice / basePrice) * 100) : 0;
 
   return (
     <div className="rounded-xl bg-neutral-950 text-white overflow-hidden">
@@ -34,7 +35,7 @@ export function PriceCard({ basePrice, discountPercent, installments }: PriceCar
             <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               {formatPrice(cashPrice)}
             </p>
-            {discountPercent > 0 && (
+            {hasDiscount && (
               <p className="text-xs text-white/60">
                 <span className="line-through">{formatPrice(basePrice)}</span>{" "}
                 <span className="text-sky-400 font-semibold">-{discountPercent}%</span>
@@ -48,7 +49,7 @@ export function PriceCard({ basePrice, discountPercent, installments }: PriceCar
             <p className="text-xs font-bold tracking-widest text-white/70 uppercase">Precio</p>
             <p className="text-3xl font-extrabold tracking-tight">{formatPrice(cashPrice)}</p>
           </div>
-          {discountPercent > 0 && (
+          {hasDiscount && (
             <p className="text-sm text-white/60 mb-1">
               <span className="line-through">{formatPrice(basePrice)}</span>{" "}
               <span className="text-sky-400 font-semibold">-{discountPercent}%</span>

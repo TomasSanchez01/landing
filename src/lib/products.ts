@@ -8,9 +8,18 @@ export { computeFinalPrice } from "@/lib/product-types";
 const COLLECTION = "products";
 
 function normalizeProduct(product: Product): Product {
+  // compat: docs guardados antes de reemplazar discountPercent por cashPrice
+  const legacyDiscountPercent = (product as unknown as { discountPercent?: number })
+    .discountPercent;
+
   return {
     ...product,
     installments: product.installments ?? 1,
+    cashPrice:
+      product.cashPrice ??
+      (legacyDiscountPercent != null
+        ? product.basePrice * (1 - legacyDiscountPercent / 100)
+        : product.basePrice),
     steps: [...product.steps]
       .sort((a, b) => a.order - b.order)
       .map((step) => ({ ...step, groups: step.groups ?? [] })),
