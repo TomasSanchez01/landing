@@ -36,8 +36,16 @@ export default function AdminLoginPage() {
 
       router.push("/admin");
       router.refresh();
-    } catch {
-      setError("Email o contraseña incorrectos.");
+    } catch (err) {
+      const code = (err as { code?: string })?.code;
+
+      if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
+        setError("Email o contraseña incorrectos.");
+      } else if (code) {
+        setError(`Error de Firebase Auth (${code}). Revisá la configuración.`);
+      } else {
+        setError("No se pudo crear la sesión en el servidor. Revisá las credenciales de Firebase Admin.");
+      }
       setLoading(false);
     }
   };

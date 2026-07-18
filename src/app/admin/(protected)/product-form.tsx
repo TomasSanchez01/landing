@@ -410,10 +410,22 @@ function OptionsEditor({
           <div className="flex gap-2 items-start">
             <div className="flex-1 space-y-2">
               <Input
-                placeholder="Nombre de la opción (ej: Césped verde estándar)"
+                placeholder="Nombre de la opción (ej: River Plate)"
                 value={option.label}
                 onChange={(e) => updateOption(index, { label: e.target.value })}
               />
+              <div className="flex items-center gap-2">
+                <Label htmlFor={`group-${option.id}`} className="text-xs shrink-0">
+                  Subcategoría
+                </Label>
+                <Input
+                  id={`group-${option.id}`}
+                  placeholder="Opcional (ej: Nacionales)"
+                  value={option.group ?? ""}
+                  onChange={(e) => updateOption(index, { group: e.target.value })}
+                  className="w-48"
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <Label htmlFor={`price-${option.id}`} className="text-xs shrink-0">
                   Precio adicional

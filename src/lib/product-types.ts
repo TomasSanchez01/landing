@@ -4,6 +4,8 @@ export interface ConfigOption {
   images: string[];
   priceModifier: number;
   description?: string;
+  /** Subcategoría opcional para agrupar visualmente las opciones de un paso (ej: "Nacionales" / "Internacionales" dentro de "Equipos"). No agrega un paso de selección extra: se elige una sola opción por paso, sin importar el grupo. */
+  group?: string;
 }
 
 export interface ConfigStep {
