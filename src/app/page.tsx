@@ -17,15 +17,18 @@ export default async function Home() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {products.map((product) => {
           const cardClass = cn(
-            "group relative aspect-square rounded-xl overflow-hidden border border-border/50 bg-secondary/20 transition-all duration-300",
+            "group relative aspect-3/4 rounded-xl overflow-hidden border border-border/50 bg-secondary/20 transition-all duration-300",
             product.comingSoon ? "cursor-not-allowed" : "hover:border-primary/50"
           );
 
           const inner = (
             <>
-              <span className="absolute inset-0 z-10 flex items-center justify-center px-3 text-center font-semibold transition-opacity duration-300 group-hover:opacity-0">
-                {product.name}
-              </span>
+              <Image
+                src={product.navbarImage}
+                alt={product.name}
+                fill
+                className="object-contain p-6 transition-opacity duration-300 group-hover:opacity-0"
+              />
               <Image
                 src={product.tabImage}
                 alt={product.name}

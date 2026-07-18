@@ -19,7 +19,7 @@ export function Navbar({ products }: { products: Product[] }) {
               alt="Logo"
               width={200}
               height={100}
-              className="h-4 md:h-6 w-auto"
+              className="h-3 md:h-4 w-auto"
               priority
               unoptimized
             />

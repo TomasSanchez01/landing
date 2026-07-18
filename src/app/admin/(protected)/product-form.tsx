@@ -253,22 +253,7 @@ export function ProductForm({ product }: { product?: Product }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Imagen de tarjeta (home)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ImageUploader
-            value={form.tabImage ? [form.tabImage] : []}
-            onChange={(urls) => update("tabImage", urls[urls.length - 1] ?? "")}
-            pathPrefix={`products/${form.slug || "nuevo"}/tab`}
-            multiple={false}
-            label="Tarjeta"
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Imagen de navbar</CardTitle>
+          <CardTitle>Imagen de navbar / tarjeta (estado normal)</CardTitle>
         </CardHeader>
         <CardContent>
           <ImageUploader
@@ -278,6 +263,28 @@ export function ProductForm({ product }: { product?: Product }) {
             multiple={false}
             label="Navbar"
           />
+          <p className="text-xs text-muted-foreground mt-2">
+            Se usa en el navbar y es la que se ve en la tarjeta de la home antes de pasar el
+            mouse.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Imagen de hover (tarjeta home)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ImageUploader
+            value={form.tabImage ? [form.tabImage] : []}
+            onChange={(urls) => update("tabImage", urls[urls.length - 1] ?? "")}
+            pathPrefix={`products/${form.slug || "nuevo"}/tab`}
+            multiple={false}
+            label="Hover"
+          />
+          <p className="text-xs text-muted-foreground mt-2">
+            Se muestra en la tarjeta de la home cuando el cliente pasa el mouse por encima.
+          </p>
         </CardContent>
       </Card>
 
