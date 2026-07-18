@@ -2,8 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { clientStorage } from "@/lib/firebase-client";
+import { uploadAdminFile } from "@/lib/admin-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -555,10 +554,8 @@ function BulkOptionUploader({
       const created = await Promise.all(
         Array.from(files).map(async (file) => {
           const optionId = newId();
-          const path = `products/${slug || "nuevo"}/steps/${stepId}/${optionId}/${Date.now()}-${file.name}`;
-          const storageRef = ref(clientStorage, path);
-          await uploadBytes(storageRef, file);
-          const url = await getDownloadURL(storageRef);
+          const pathPrefix = `products/${slug || "nuevo"}/steps/${stepId}/${optionId}`;
+          const url = await uploadAdminFile(file, pathPrefix);
           return {
             id: optionId,
             label: labelFromFilename(file.name),

@@ -2,8 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { clientStorage } from "@/lib/firebase-client";
+import { uploadAdminFile, deleteAdminFile } from "@/lib/admin-upload";
 import { Loader2, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,12 +40,7 @@ export function ImageUploader({
 
     try {
       const uploads = await Promise.all(
-        Array.from(files).map(async (file) => {
-          const path = `${pathPrefix}/${Date.now()}-${file.name}`;
-          const storageRef = ref(clientStorage, path);
-          await uploadBytes(storageRef, file);
-          return getDownloadURL(storageRef);
-        })
+        Array.from(files).map((file) => uploadAdminFile(file, pathPrefix))
       );
 
       onChange(multiple ? [...value, ...uploads] : uploads);
@@ -60,11 +54,7 @@ export function ImageUploader({
 
   const handleRemove = async (url: string) => {
     onChange(value.filter((u) => u !== url));
-    try {
-      await deleteObject(ref(clientStorage, url));
-    } catch {
-      // el archivo puede no existir más en Storage; no bloquea el flujo
-    }
+    await deleteAdminFile(url);
   };
 
   return (

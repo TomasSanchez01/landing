@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-import { clientAuth } from "@/lib/firebase-client";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
@@ -11,7 +9,6 @@ export function AdminHeader({ email }: { email: string }) {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await signOut(clientAuth).catch(() => {});
     await fetch("/api/admin/session", { method: "DELETE" });
     router.push("/admin/login");
     router.refresh();

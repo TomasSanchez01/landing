@@ -2,15 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { clientAuth } from "@/lib/firebase-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
-
-class SessionError extends Error {}
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -25,36 +21,23 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      const credential = await signInWithEmailAndPassword(clientAuth, email.trim(), password);
-      const idToken = await credential.user.getIdToken();
-
       const res = await fetch("/api/admin/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new SessionError(body.detail || "error desconocido");
+        setError(body.detail || body.error || "Email o contraseña incorrectos.");
+        setLoading(false);
+        return;
       }
 
       router.push("/admin");
       router.refresh();
-    } catch (err) {
-      if (err instanceof SessionError) {
-        setError(`No se pudo crear la sesión en el servidor: ${err.message}`);
-      } else {
-        const code = (err as { code?: string })?.code;
-
-        if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
-          setError("Email o contraseña incorrectos.");
-        } else if (code) {
-          setError(`Error de Firebase Auth (${code}). Revisá la configuración.`);
-        } else {
-          setError("No se pudo iniciar sesión. Intentá de nuevo.");
-        }
-      }
+    } catch {
+      setError("No se pudo conectar con el servidor. Intentá de nuevo.");
       setLoading(false);
     }
   };
