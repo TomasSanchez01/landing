@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Navbar } from "@/components/navbar";
+import { getPublishedProducts } from "@/lib/products";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,17 +19,19 @@ export const metadata: Metadata = {
   description: "Descubrí nuestra línea de productos premium.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const products = await getPublishedProducts();
+
   return (
     <html lang="es" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
       >
-        <Navbar />
+        <Navbar products={products} />
         <main className="pt-16">{children}</main>
       </body>
     </html>

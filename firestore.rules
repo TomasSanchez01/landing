@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Todo el acceso a Firestore pasa por el servidor (firebase-admin),
+    // que ignora estas reglas. Las dejamos cerradas para cualquier
+    // acceso directo desde el cliente.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

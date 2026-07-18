@@ -1,8 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { products } from "@/data/products";
+import { getPublishedProducts } from "@/lib/products";
 
-export default function Home() {
+export default async function Home() {
+  const products = await getPublishedProducts();
+
   return (
     <div className="h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
       <section className="container mx-auto px-4 pt-6 flex-1 flex flex-col">

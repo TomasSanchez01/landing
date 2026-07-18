@@ -3,10 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { products } from "@/data/products";
+import type { Product } from "@/lib/product-types";
 import { cn } from "@/lib/utils";
 
-export function Navbar() {
+export function Navbar({ products }: { products: Product[] }) {
   const pathname = usePathname();
 
   return (
