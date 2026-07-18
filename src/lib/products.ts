@@ -12,7 +12,7 @@ function sortSteps(product: Product): Product {
     ...product,
     steps: [...product.steps]
       .sort((a, b) => a.order - b.order)
-      .map((step) => ({ ...step })),
+      .map((step) => ({ ...step, groups: step.groups ?? [] })),
   };
 }
 

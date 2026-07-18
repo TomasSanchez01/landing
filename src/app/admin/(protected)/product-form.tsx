@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { clientStorage } from "@/lib/firebase-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUploader } from "@/components/ui/image-uploader";
-import { Plus, Trash2, GripVertical, AlertCircle } from "lucide-react";
-import type { Product, ConfigStep, ConfigOption } from "@/lib/product-types";
+import { Plus, Trash2, GripVertical, AlertCircle, ImagePlus, Loader2 } from "lucide-react";
+import type { Product, ConfigStep, ConfigOption, OptionGroup } from "@/lib/product-types";
 import { createProduct, updateProduct, type ProductInput } from "./actions";
 
 function newId() {
@@ -25,12 +27,24 @@ function slugify(text: string) {
     .replace(/(^-|-$)/g, "");
 }
 
-function emptyOption(): ConfigOption {
-  return { id: newId(), label: "", images: [], priceModifier: 0 };
+function emptyOption(groupId?: string): ConfigOption {
+  return { id: newId(), label: "", images: [], priceModifier: 0, groupId };
+}
+
+function labelFromFilename(filename: string) {
+  return filename
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function emptyStep(order: number): ConfigStep {
-  return { id: newId(), name: "", order, options: [emptyOption()] };
+  return { id: newId(), name: "", order, groups: [], options: [emptyOption()] };
+}
+
+function emptyGroup(order: number): OptionGroup {
+  return { id: newId(), name: "", order };
 }
 
 function emptyProduct(): ProductInput {
@@ -365,8 +379,24 @@ function StepsEditor({
             </Button>
           </div>
 
+          <GroupsEditor
+            groups={step.groups}
+            onChange={(groups) => {
+              const removedIds = step.groups
+                .filter((g) => !groups.some((ng) => ng.id === g.id))
+                .map((g) => g.id);
+              const options = removedIds.length
+                ? step.options.map((o) =>
+                    removedIds.includes(o.groupId ?? "") ? { ...o, groupId: undefined } : o
+                  )
+                : step.options;
+              updateStep(index, { groups, options });
+            }}
+          />
+
           <OptionsEditor
             options={step.options}
+            groups={step.groups}
             slug={slug}
             stepId={step.id}
             onChange={(options) => updateStep(index, { options })}
@@ -382,94 +412,280 @@ function StepsEditor({
   );
 }
 
+function GroupsEditor({
+  groups,
+  onChange,
+}: {
+  groups: OptionGroup[];
+  onChange: (groups: OptionGroup[]) => void;
+}) {
+  const updateGroup = (index: number, name: string) => {
+    const next = [...groups];
+    next[index] = { ...next[index], name };
+    onChange(next);
+  };
+
+  const removeGroup = (index: number) => {
+    onChange(groups.filter((_, i) => i !== index).map((g, i) => ({ ...g, order: i })));
+  };
+
+  return (
+    <div className="pl-6 space-y-2">
+      <Label className="text-xs text-muted-foreground">
+        Subcategorías (opcional, ej: Nacionales / Internacionales)
+      </Label>
+      {groups.map((group, index) => (
+        <div key={group.id} className="flex gap-2">
+          <Input
+            placeholder="Nombre de la subcategoría"
+            value={group.name}
+            onChange={(e) => updateGroup(index, e.target.value)}
+            className="max-w-xs"
+          />
+          <Button type="button" variant="ghost" size="icon" onClick={() => removeGroup(index)}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => onChange([...groups, emptyGroup(groups.length)])}
+      >
+        <Plus className="w-4 h-4 mr-1.5" />
+        Agregar subcategoría
+      </Button>
+    </div>
+  );
+}
+
+function OptionCard({
+  option,
+  groups,
+  slug,
+  stepId,
+  onUpdate,
+  onRemove,
+}: {
+  option: ConfigOption;
+  groups: OptionGroup[];
+  slug: string;
+  stepId: string;
+  onUpdate: (patch: Partial<ConfigOption>) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="bg-secondary/20 rounded-md p-3 space-y-2">
+      <div className="flex gap-2 items-start">
+        <div className="flex-1 space-y-2">
+          <Input
+            placeholder="Nombre de la opción (ej: River Plate)"
+            value={option.label}
+            onChange={(e) => onUpdate({ label: e.target.value })}
+          />
+          {groups.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Label htmlFor={`group-${option.id}`} className="text-xs shrink-0">
+                Subcategoría
+              </Label>
+              <select
+                id={`group-${option.id}`}
+                value={option.groupId ?? ""}
+                onChange={(e) => onUpdate({ groupId: e.target.value || undefined })}
+                className="w-48 h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs dark:bg-input/30"
+              >
+                <option value="">Sin subcategoría</option>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name || "(sin nombre)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <Label htmlFor={`price-${option.id}`} className="text-xs shrink-0">
+              Precio adicional
+            </Label>
+            <Input
+              id={`price-${option.id}`}
+              type="number"
+              step="0.01"
+              value={option.priceModifier}
+              onChange={(e) => onUpdate({ priceModifier: Number(e.target.value) })}
+              className="w-32"
+            />
+          </div>
+        </div>
+        <Button type="button" variant="ghost" size="icon" onClick={onRemove}>
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <ImageUploader
+        value={option.images}
+        onChange={(images) => onUpdate({ images })}
+        pathPrefix={`products/${slug || "nuevo"}/steps/${stepId}/${option.id}`}
+        label="Imagen"
+      />
+    </div>
+  );
+}
+
+function BulkOptionUploader({
+  slug,
+  stepId,
+  groupId,
+  onCreate,
+}: {
+  slug: string;
+  stepId: string;
+  groupId?: string;
+  onCreate: (options: ConfigOption[]) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+
+    try {
+      const created = await Promise.all(
+        Array.from(files).map(async (file) => {
+          const optionId = newId();
+          const path = `products/${slug || "nuevo"}/steps/${stepId}/${optionId}/${Date.now()}-${file.name}`;
+          const storageRef = ref(clientStorage, path);
+          await uploadBytes(storageRef, file);
+          const url = await getDownloadURL(storageRef);
+          return {
+            id: optionId,
+            label: labelFromFilename(file.name),
+            images: [url],
+            priceModifier: 0,
+            groupId,
+          } satisfies ConfigOption;
+        })
+      );
+      onCreate(created);
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={uploading}
+        onClick={() => inputRef.current?.click()}
+      >
+        {uploading ? (
+          <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+        ) : (
+          <ImagePlus className="w-4 h-4 mr-1.5" />
+        )}
+        Crear opciones desde imágenes
+      </Button>
+    </>
+  );
+}
+
 function OptionsEditor({
   options,
+  groups,
   slug,
   stepId,
   onChange,
 }: {
   options: ConfigOption[];
+  groups: OptionGroup[];
   slug: string;
   stepId: string;
   onChange: (options: ConfigOption[]) => void;
 }) {
-  const updateOption = (index: number, patch: Partial<ConfigOption>) => {
-    const next = [...options];
-    next[index] = { ...next[index], ...patch };
-    onChange(next);
+  const updateOption = (id: string, patch: Partial<ConfigOption>) => {
+    onChange(options.map((o) => (o.id === id ? { ...o, ...patch } : o)));
   };
 
-  const removeOption = (index: number) => {
-    onChange(options.filter((_, i) => i !== index));
+  const removeOption = (id: string) => {
+    onChange(options.filter((o) => o.id !== id));
   };
+
+  const addOption = (groupId?: string) => {
+    onChange([...options, emptyOption(groupId)]);
+  };
+
+  const addBulkOptions = (created: ConfigOption[]) => {
+    onChange([...options, ...created]);
+  };
+
+  const ungrouped = options.filter(
+    (o) => !o.groupId || !groups.some((g) => g.id === o.groupId)
+  );
+
+  const sections = [
+    { id: undefined as string | undefined, name: null as string | null, options: ungrouped },
+    ...groups.map((group) => ({
+      id: group.id,
+      name: group.name || "(sin nombre)",
+      options: options.filter((o) => o.groupId === group.id),
+    })),
+  ];
 
   return (
-    <div className="pl-6 space-y-3">
-      {options.map((option, index) => (
-        <div key={option.id} className="bg-secondary/20 rounded-md p-3 space-y-2">
-          <div className="flex gap-2 items-start">
-            <div className="flex-1 space-y-2">
-              <Input
-                placeholder="Nombre de la opción (ej: River Plate)"
-                value={option.label}
-                onChange={(e) => updateOption(index, { label: e.target.value })}
+    <div className="pl-6 space-y-5">
+      {sections.map((section) => (
+        <div key={section.id ?? "ungrouped"} className="space-y-2">
+          {section.name && (
+            <p className="text-sm font-medium text-muted-foreground">{section.name}</p>
+          )}
+
+          <div className="space-y-3">
+            {section.options.map((option) => (
+              <OptionCard
+                key={option.id}
+                option={option}
+                groups={groups}
+                slug={slug}
+                stepId={stepId}
+                onUpdate={(patch) => updateOption(option.id, patch)}
+                onRemove={() => removeOption(option.id)}
               />
-              <div className="flex items-center gap-2">
-                <Label htmlFor={`group-${option.id}`} className="text-xs shrink-0">
-                  Subcategoría
-                </Label>
-                <Input
-                  id={`group-${option.id}`}
-                  placeholder="Opcional (ej: Nacionales)"
-                  value={option.group ?? ""}
-                  onChange={(e) => updateOption(index, { group: e.target.value })}
-                  className="w-48"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor={`price-${option.id}`} className="text-xs shrink-0">
-                  Precio adicional
-                </Label>
-                <Input
-                  id={`price-${option.id}`}
-                  type="number"
-                  step="0.01"
-                  value={option.priceModifier}
-                  onChange={(e) =>
-                    updateOption(index, { priceModifier: Number(e.target.value) })
-                  }
-                  className="w-32"
-                />
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => removeOption(index)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            ))}
           </div>
 
-          <ImageUploader
-            value={option.images}
-            onChange={(images) => updateOption(index, { images })}
-            pathPrefix={`products/${slug || "nuevo"}/steps/${stepId}/${option.id}`}
-            label="Imagen"
-          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => addOption(section.id)}
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Agregar opción
+            </Button>
+            <BulkOptionUploader
+              slug={slug}
+              stepId={stepId}
+              groupId={section.id}
+              onCreate={addBulkOptions}
+            />
+          </div>
         </div>
       ))}
-
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => onChange([...options, emptyOption()])}
-      >
-        <Plus className="w-4 h-4 mr-1.5" />
-        Agregar opción
-      </Button>
     </div>
   );
 }

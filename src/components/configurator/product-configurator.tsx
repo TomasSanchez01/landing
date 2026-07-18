@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check, MessageCircle } from "lucide-react";
-import type { ConfigOption, Product } from "@/lib/product-types";
+import type { ConfigOption, ConfigStep, Product } from "@/lib/product-types";
 import { computeFinalPrice } from "@/lib/product-types";
 import { buildWhatsappMessage, buildWhatsappUrl } from "@/lib/whatsapp";
 
@@ -17,14 +17,21 @@ function formatPrice(value: number) {
   });
 }
 
-function groupOptions(options: ConfigOption[]): Map<string, ConfigOption[]> {
-  const groups = new Map<string, ConfigOption[]>();
-  for (const option of options) {
-    const key = option.group?.trim() || "";
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(option);
-  }
-  return groups;
+function groupOptions(step: ConfigStep): { ungrouped: ConfigOption[]; named: { id: string; name: string; options: ConfigOption[] }[] } {
+  const ungrouped = step.options.filter(
+    (o) => !o.groupId || !step.groups.some((g) => g.id === o.groupId)
+  );
+
+  const named = [...step.groups]
+    .sort((a, b) => a.order - b.order)
+    .map((group) => ({
+      id: group.id,
+      name: group.name,
+      options: step.options.filter((o) => o.groupId === group.id),
+    }))
+    .filter((g) => g.options.length > 0);
+
+  return { ungrouped, named };
 }
 
 function OptionCard({
@@ -111,9 +118,7 @@ export function ProductConfigurator({ product }: { product: Product }) {
   return (
     <div className="space-y-6 pb-24">
       {product.steps.map((step) => {
-        const groups = groupOptions(step.options);
-        const ungrouped = groups.get("") ?? [];
-        const named = [...groups.entries()].filter(([key]) => key !== "");
+        const { ungrouped, named } = groupOptions(step);
 
         return (
           <div key={step.id}>
@@ -132,13 +137,13 @@ export function ProductConfigurator({ product }: { product: Product }) {
               </div>
             )}
 
-            {named.map(([groupName, options]) => (
-              <div key={groupName} className="mb-3">
+            {named.map((group) => (
+              <div key={group.id} className="mb-3">
                 <p className="text-sm font-medium text-muted-foreground mb-1.5">
-                  {groupName}
+                  {group.name}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                  {options.map((option) => (
+                  {group.options.map((option) => (
                     <OptionCard
                       key={option.id}
                       option={option}

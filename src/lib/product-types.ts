@@ -1,17 +1,25 @@
+export interface OptionGroup {
+  id: string;
+  name: string;
+  order: number;
+}
+
 export interface ConfigOption {
   id: string;
   label: string;
   images: string[];
   priceModifier: number;
   description?: string;
-  /** Subcategoría opcional para agrupar visualmente las opciones de un paso (ej: "Nacionales" / "Internacionales" dentro de "Equipos"). No agrega un paso de selección extra: se elige una sola opción por paso, sin importar el grupo. */
-  group?: string;
+  /** Referencia a ConfigStep.groups[].id. Solo agrupa visualmente las opciones del paso (ej: "Nacionales" dentro de "Equipo"); no agrega un paso de selección extra, se elige una sola opción por paso sin importar la subcategoría. */
+  groupId?: string;
 }
 
 export interface ConfigStep {
   id: string;
   name: string;
   order: number;
+  /** Subcategorías opcionales para organizar las opciones (ej: "Nacionales" / "Internacionales" dentro de "Equipo"). */
+  groups: OptionGroup[];
   options: ConfigOption[];
 }
 
