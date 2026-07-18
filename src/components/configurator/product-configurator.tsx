@@ -142,8 +142,9 @@ export function ProductConfigurator({
     allStepsSelected &&
     (!needsPaymentChoice || paymentMethod !== null) &&
     (!needsShipping || shippingZoneId !== "");
-  const finalPrice =
-    computeFinalPrice(product, selections, paymentMethod ?? "cash") + (selectedZone?.price ?? 0);
+  const metegolPrice = computeFinalPrice(product, selections, paymentMethod ?? "cash");
+  const shippingPrice = selectedZone?.price ?? 0;
+  const finalPrice = metegolPrice + shippingPrice;
 
   const missingLabel = !allStepsSelected
     ? `Faltan ${product.steps.length - selectedCount} característica(s) por elegir`
@@ -152,6 +153,12 @@ export function ProductConfigurator({
     : needsShipping && !shippingZoneId
     ? "Elegí tu zona de envío"
     : `${selectedCount} de ${product.steps.length} características elegidas`;
+
+  const paymentLabel = needsPaymentChoice
+    ? paymentMethod === "installments"
+      ? `${product.installments} cuotas`
+      : "Contado / transferencia"
+    : null;
 
   return (
     <div className="space-y-6 pb-24">
@@ -257,6 +264,13 @@ export function ProductConfigurator({
         <div>
           <p className="text-xs text-muted-foreground">{missingLabel}</p>
           <p className="text-xl font-bold text-primary">{formatPrice(finalPrice)}</p>
+          {canQuote && (
+            <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
+              <p>Metegol: {formatPrice(metegolPrice)}</p>
+              {needsShipping && <p>Envío: {formatPrice(shippingPrice)}</p>}
+              {paymentLabel && <p>Pago: {paymentLabel}</p>}
+            </div>
+          )}
         </div>
         {canQuote ? (
           <Button asChild size="lg">
