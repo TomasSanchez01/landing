@@ -11,6 +11,9 @@ import { updateSiteSettings } from "../actions";
 
 export function SettingsForm({ settings }: { settings: SiteSettings }) {
   const [whatsappPhone, setWhatsappPhone] = useState(settings.whatsappPhone);
+  const [whatsappConsultasPhone, setWhatsappConsultasPhone] = useState(
+    settings.whatsappConsultasPhone
+  );
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -22,7 +25,10 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
 
     startTransition(async () => {
       try {
-        await updateSiteSettings({ whatsappPhone: whatsappPhone.trim() });
+        await updateSiteSettings({
+          whatsappPhone: whatsappPhone.trim(),
+          whatsappConsultasPhone: whatsappConsultasPhone.trim(),
+        });
         setSaved(true);
       } catch {
         setError("No se pudo guardar. Intentá de nuevo.");
@@ -48,6 +54,22 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
             <p className="text-xs text-muted-foreground">
               Con código de país, sin espacios ni signos (ej: 5493416841105). Es el número al
               que llegan las cotizaciones de los clientes.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="whatsappConsultasPhone">
+              Número de WhatsApp para consultas (opcional)
+            </Label>
+            <Input
+              id="whatsappConsultasPhone"
+              value={whatsappConsultasPhone}
+              onChange={(e) => setWhatsappConsultasPhone(e.target.value)}
+              placeholder="5493416841105"
+            />
+            <p className="text-xs text-muted-foreground">
+              Es el número del botón flotante de WhatsApp que se muestra en toda la web. Si lo
+              dejás vacío, se usa el mismo número de arriba.
             </p>
           </div>
 

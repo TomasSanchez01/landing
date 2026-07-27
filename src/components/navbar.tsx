@@ -40,13 +40,15 @@ export function Navbar({ products }: { products: Product[] }) {
                       isActive && "bg-secondary ring-2 ring-primary"
                     )}
                   >
-                    <Image
-                      src={product.navbarImage}
-                      alt={product.name}
-                      fill
-                      className="object-contain p-1"
-                      sizes="90px"
-                    />
+                    {product.navbarImage && (
+                      <Image
+                        src={product.navbarImage}
+                        alt={product.name}
+                        fill
+                        className="object-contain p-1"
+                        sizes="90px"
+                      />
+                    )}
                   </Link>
                 );
               })}

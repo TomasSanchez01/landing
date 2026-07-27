@@ -23,18 +23,22 @@ export default async function Home() {
 
           const inner = (
             <>
-              <Image
-                src={product.navbarImage}
-                alt={product.name}
-                fill
-                className="object-contain p-6 transition-opacity duration-300 group-hover:opacity-0"
-              />
-              <Image
-                src={product.tabImage}
-                alt={product.name}
-                fill
-                className="object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-              />
+              {product.navbarImage && (
+                <Image
+                  src={product.navbarImage}
+                  alt={product.name}
+                  fill
+                  className="object-contain p-6 transition-opacity duration-300 group-hover:opacity-0"
+                />
+              )}
+              {product.tabImage && (
+                <Image
+                  src={product.tabImage}
+                  alt={product.name}
+                  fill
+                  className="object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                />
+              )}
               {product.comingSoon && (
                 <span className="absolute top-2 right-2 z-20 rounded-full bg-primary px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
                   Próximamente

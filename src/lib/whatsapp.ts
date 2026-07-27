@@ -52,3 +52,10 @@ export function buildWhatsappMessage(
 export function buildWhatsappUrl(message: string, phone: string): string {
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
+
+export function resolveConsultasPhone(settings: {
+  whatsappPhone: string;
+  whatsappConsultasPhone: string;
+}): string {
+  return settings.whatsappConsultasPhone.trim() || settings.whatsappPhone;
+}

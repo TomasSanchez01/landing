@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Navbar } from "@/components/navbar";
+import { WhatsappButton } from "@/components/whatsapp-button";
 import { getPublishedProducts } from "@/lib/products";
+import { getSiteSettings } from "@/lib/settings";
+import { resolveConsultasPhone } from "@/lib/whatsapp";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,7 +27,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const products = await getPublishedProducts();
+  const [products, settings] = await Promise.all([getPublishedProducts(), getSiteSettings()]);
+  const consultasPhone = resolveConsultasPhone(settings);
 
   return (
     <html lang="es" className="dark">
@@ -33,6 +37,7 @@ export default async function RootLayout({
       >
         <Navbar products={products} />
         <main className="pt-16">{children}</main>
+        <WhatsappButton phone={consultasPhone} />
       </body>
     </html>
   );
