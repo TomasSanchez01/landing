@@ -6,6 +6,13 @@ import { getDb } from "@/lib/firebase-admin";
 import { getAdminSession } from "@/lib/admin-session";
 import { saveSiteSettings, type SiteSettings } from "@/lib/settings";
 import { saveManualContent, type ManualContent } from "@/lib/manual";
+import {
+  createHiddenPage,
+  updateHiddenPage,
+  deleteHiddenPage,
+  getHiddenPageById,
+  type HiddenPageInput,
+} from "@/lib/hidden-pages";
 import type { Product } from "@/lib/product-types";
 
 async function requireAdmin() {
@@ -122,4 +129,42 @@ export async function updateManualContent(content: ManualContent) {
 
   await saveManualContent(content);
   revalidatePath("/manualdeusuario/info");
+}
+
+export async function createHiddenPageAction(input: HiddenPageInput) {
+  await requireAdmin();
+
+  await createHiddenPage(input);
+  revalidatePath("/admin/paginas");
+  redirect("/admin/paginas");
+}
+
+export async function updateHiddenPageAction(id: string, input: Omit<HiddenPageInput, "slug">) {
+  await requireAdmin();
+
+  await updateHiddenPage(id, input);
+  const page = await getHiddenPageById(id);
+  revalidatePath("/admin/paginas");
+  if (page) revalidatePath(`/${page.slug}`);
+  redirect("/admin/paginas");
+}
+
+export async function deleteHiddenPageAction(id: string) {
+  await requireAdmin();
+
+  const page = await getHiddenPageById(id);
+  await deleteHiddenPage(id);
+  revalidatePath("/admin/paginas");
+  if (page) revalidatePath(`/${page.slug}`);
+}
+
+export async function setHiddenPageEnabledAction(id: string, enabled: boolean) {
+  await requireAdmin();
+
+  const page = await getHiddenPageById(id);
+  if (!page) throw new Error("Página no encontrada");
+
+  await updateHiddenPage(id, { ...page, enabled });
+  revalidatePath("/admin/paginas");
+  revalidatePath(`/${page.slug}`);
 }
