@@ -4,6 +4,7 @@ import { getDb } from "@/lib/firebase-admin";
 export interface SiteSettings {
   whatsappPhone: string;
   whatsappConsultasPhone: string;
+  manualUsuarioEnabled: boolean;
 }
 
 const COLLECTION = "settings";
@@ -12,6 +13,7 @@ const DOC_ID = "site";
 const DEFAULT_SETTINGS: SiteSettings = {
   whatsappPhone: process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "",
   whatsappConsultasPhone: "",
+  manualUsuarioEnabled: true,
 };
 
 export async function getSiteSettings(): Promise<SiteSettings> {

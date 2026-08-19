@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getDb } from "@/lib/firebase-admin";
 import { getAdminSession } from "@/lib/admin-session";
 import { saveSiteSettings, type SiteSettings } from "@/lib/settings";
+import { saveManualContent, type ManualContent } from "@/lib/manual";
 import type { Product } from "@/lib/product-types";
 
 async function requireAdmin() {
@@ -114,4 +115,11 @@ export async function updateSiteSettings(settings: SiteSettings) {
 
   await saveSiteSettings(settings);
   revalidatePath("/", "layout");
+}
+
+export async function updateManualContent(content: ManualContent) {
+  await requireAdmin();
+
+  await saveManualContent(content);
+  revalidatePath("/manualdeusuario/info");
 }

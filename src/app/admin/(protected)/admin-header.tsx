@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings } from "lucide-react";
+import { BookOpen, LogOut, Settings } from "lucide-react";
 
 export function AdminHeader({ email }: { email: string }) {
   const router = useRouter();
@@ -22,6 +22,12 @@ export function AdminHeader({ email }: { email: string }) {
         </Link>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <span>{email}</span>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/admin/manual">
+              <BookOpen className="w-4 h-4 mr-1.5" />
+              Manual
+            </Link>
+          </Button>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/admin/configuracion">
               <Settings className="w-4 h-4 mr-1.5" />

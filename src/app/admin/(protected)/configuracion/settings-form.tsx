@@ -14,6 +14,9 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
   const [whatsappConsultasPhone, setWhatsappConsultasPhone] = useState(
     settings.whatsappConsultasPhone
   );
+  const [manualUsuarioEnabled, setManualUsuarioEnabled] = useState(
+    settings.manualUsuarioEnabled
+  );
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -28,6 +31,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         await updateSiteSettings({
           whatsappPhone: whatsappPhone.trim(),
           whatsappConsultasPhone: whatsappConsultasPhone.trim(),
+          manualUsuarioEnabled,
         });
         setSaved(true);
       } catch {
@@ -39,7 +43,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>WhatsApp</CardTitle>
+        <CardTitle>General</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,6 +75,19 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
               Es el número del botón flotante de WhatsApp que se muestra en toda la web. Si lo
               dejás vacío, se usa el mismo número de arriba.
             </p>
+          </div>
+
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <input
+              id="manualUsuarioEnabled"
+              type="checkbox"
+              checked={manualUsuarioEnabled}
+              onChange={(e) => setManualUsuarioEnabled(e.target.checked)}
+              className="w-4 h-4"
+            />
+            <Label htmlFor="manualUsuarioEnabled">
+              Manual de usuario habilitado (/manualdeusuario/info)
+            </Label>
           </div>
 
           {error && (
