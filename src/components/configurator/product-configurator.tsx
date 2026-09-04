@@ -225,7 +225,7 @@ export function ProductConfigurator({
                       key={option.id}
                       option={option}
                       isSelected={isSelected}
-                      disabled={!isSelected && stepFull}
+                      disabled={step.selectionCount > 1 && !isSelected && stepFull}
                       onSelect={() => selectOption(step, option.id)}
                       size="lg"
                     />
@@ -247,7 +247,7 @@ export function ProductConfigurator({
                         key={option.id}
                         option={option}
                         isSelected={isSelected}
-                        disabled={!isSelected && stepFull}
+                        disabled={step.selectionCount > 1 && !isSelected && stepFull}
                         onSelect={() => selectOption(step, option.id)}
                         size="sm"
                       />
