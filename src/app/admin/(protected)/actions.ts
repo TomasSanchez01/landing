@@ -6,6 +6,7 @@ import { getDb } from "@/lib/firebase-admin";
 import { getAdminSession } from "@/lib/admin-session";
 import { saveSiteSettings, type SiteSettings } from "@/lib/settings";
 import { saveManualContent, type ManualContent } from "@/lib/manual";
+import { saveCapofingerSettings, type CapofingerSettings } from "@/lib/capofinger";
 import {
   createHiddenPage,
   updateHiddenPage,
@@ -129,6 +130,12 @@ export async function updateManualContent(content: ManualContent) {
 
   await saveManualContent(content);
   revalidatePath("/manualdeusuario/info");
+}
+
+export async function updateCapofingerSettings(settings: CapofingerSettings) {
+  await requireAdmin();
+
+  await saveCapofingerSettings(settings);
 }
 
 export async function createHiddenPageAction(input: HiddenPageInput) {

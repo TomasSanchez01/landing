@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LogOut, QrCode, Settings } from "lucide-react";
+import { BookOpen, Gamepad2, LogOut, QrCode, Settings } from "lucide-react";
 
 export function AdminHeader({ email }: { email: string }) {
   const router = useRouter();
@@ -26,6 +26,12 @@ export function AdminHeader({ email }: { email: string }) {
             <Link href="/admin/manual">
               <BookOpen className="w-4 h-4 mr-1.5" />
               Manual
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/admin/capofinger">
+              <Gamepad2 className="w-4 h-4 mr-1.5" />
+              CapoFinger
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild>
