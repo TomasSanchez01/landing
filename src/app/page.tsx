@@ -62,6 +62,29 @@ export default async function Home() {
           );
         })}
       </div>
+
+      <div className="mt-10">
+        <h2 className="text-lg sm:text-xl font-bold mb-4">Minijuego</h2>
+        <a
+          href="/games/capofinger.html"
+          className="group relative flex items-center gap-4 rounded-xl overflow-hidden border border-border/50 bg-secondary/20 p-4 transition-all duration-300 hover:border-primary/50 max-w-md"
+        >
+          <div className="relative w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-background/40">
+            <Image
+              src="/tabs/capofinger.png"
+              alt="CapoFinger"
+              fill
+              className="object-contain p-2"
+            />
+          </div>
+          <div>
+            <p className="font-bold">CapoFinger – Marcador</p>
+            <p className="text-sm text-muted-foreground">
+              Jugá al fútbol de dedos con marcador, prendas y sorteo incluidos. Mejor con el celular acostado.
+            </p>
+          </div>
+        </a>
+      </div>
     </div>
   );
 }
