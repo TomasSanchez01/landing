@@ -80,7 +80,7 @@ export default async function Home() {
           <div>
             <p className="font-bold">CapoFinger – Marcador</p>
             <p className="text-sm text-muted-foreground">
-              Jugá al fútbol de dedos con marcador, prendas y sorteo incluidos. Mejor con el celular acostado.
+              Jugá al fútbol de dedos con marcador, preguntas, ruleta y torneo incluidos. Mejor con el celular acostado.
             </p>
           </div>
         </a>

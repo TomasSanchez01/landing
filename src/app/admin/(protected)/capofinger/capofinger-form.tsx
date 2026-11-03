@@ -4,28 +4,27 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, CheckCircle, Plus, Trash2 } from "lucide-react";
+import type { CapofingerQuestion } from "@/lib/capofinger-types";
 import { updateCapofingerSettings } from "../actions";
 
-export function CapofingerForm({ dares: initialDares }: { dares: string[] }) {
-  const [dares, setDares] = useState<string[]>(initialDares);
-  const [newDare, setNewDare] = useState("");
+const EMPTY_QUESTION: CapofingerQuestion = { question: "", correct: "", wrong1: "", wrong2: "" };
+
+export function CapofingerForm({ questions: initialQuestions }: { questions: CapofingerQuestion[] }) {
+  const [questions, setQuestions] = useState<CapofingerQuestion[]>(initialQuestions);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const addDare = () => {
-    const value = newDare.trim();
-    if (!value) return;
-    setDares((prev) => [...prev, value]);
-    setNewDare("");
+  const addQuestion = () => {
+    setQuestions((prev) => [...prev, EMPTY_QUESTION]);
   };
 
-  const removeDare = (index: number) => {
-    setDares((prev) => prev.filter((_, i) => i !== index));
+  const removeQuestion = (index: number) => {
+    setQuestions((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateDare = (index: number, value: string) => {
-    setDares((prev) => prev.map((d, i) => (i === index ? value : d)));
+  const updateQuestion = (index: number, field: keyof CapofingerQuestion, value: string) => {
+    setQuestions((prev) => prev.map((q, i) => (i === index ? { ...q, [field]: value } : q)));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,12 +32,24 @@ export function CapofingerForm({ dares: initialDares }: { dares: string[] }) {
     setError("");
     setSaved(false);
 
-    const cleaned = dares.map((d) => d.trim()).filter(Boolean);
+    const cleaned = questions
+      .map((q) => ({
+        question: q.question.trim(),
+        correct: q.correct.trim(),
+        wrong1: q.wrong1.trim(),
+        wrong2: q.wrong2.trim(),
+      }))
+      .filter((q) => q.question || q.correct || q.wrong1 || q.wrong2);
+
+    if (cleaned.some((q) => !q.question || !q.correct || !q.wrong1 || !q.wrong2)) {
+      setError("Cada pregunta tiene que tener el texto y las tres respuestas.");
+      return;
+    }
 
     startTransition(async () => {
       try {
-        await updateCapofingerSettings({ dares: cleaned });
-        setDares(cleaned);
+        await updateCapofingerSettings({ questions: cleaned });
+        setQuestions(cleaned);
         setSaved(true);
       } catch {
         setError("No se pudo guardar. Intentá de nuevo.");
@@ -48,46 +59,57 @@ export function CapofingerForm({ dares: initialDares }: { dares: string[] }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        {dares.map((dare, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <Input value={dare} onChange={(e) => updateDare(index, e.target.value)} />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => removeDare(index)}
-              title="Eliminar consigna"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+      <div className="space-y-3">
+        {questions.map((q, index) => (
+          <div key={index} className="space-y-2 rounded-lg border border-border/50 p-3">
+            <div className="flex items-center gap-2">
+              <Input
+                value={q.question}
+                onChange={(e) => updateQuestion(index, "question", e.target.value)}
+                placeholder="Pregunta (ej: ¿Cuántos Mundiales ganó Argentina?)"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => removeQuestion(index)}
+                title="Eliminar pregunta"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <Input
+                value={q.correct}
+                onChange={(e) => updateQuestion(index, "correct", e.target.value)}
+                placeholder="Respuesta correcta"
+                className="border-green-600/60"
+              />
+              <Input
+                value={q.wrong1}
+                onChange={(e) => updateQuestion(index, "wrong1", e.target.value)}
+                placeholder="Respuesta incorrecta"
+              />
+              <Input
+                value={q.wrong2}
+                onChange={(e) => updateQuestion(index, "wrong2", e.target.value)}
+                placeholder="Respuesta incorrecta"
+              />
+            </div>
           </div>
         ))}
-        {dares.length === 0 && (
+        {questions.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            No hay consignas cargadas. El juego no va a pedir ninguna hasta que agregues al menos
-            una.
+            No hay preguntas cargadas. Si guardás la lista vacía, el juego usa las que trae de
+            fábrica.
           </p>
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Input
-          value={newDare}
-          onChange={(e) => setNewDare(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addDare();
-            }
-          }}
-          placeholder="Nueva consigna (ej: Imitá el festejo de Messi)"
-        />
-        <Button type="button" variant="outline" onClick={addDare}>
-          <Plus className="w-4 h-4 mr-1.5" />
-          Agregar
-        </Button>
-      </div>
+      <Button type="button" variant="outline" onClick={addQuestion}>
+        <Plus className="w-4 h-4 mr-1.5" />
+        Agregar pregunta
+      </Button>
 
       {error && (
         <p className="text-sm text-destructive flex items-center gap-1.5">
@@ -102,9 +124,11 @@ export function CapofingerForm({ dares: initialDares }: { dares: string[] }) {
         </p>
       )}
 
-      <Button type="submit" disabled={isPending}>
-        {isPending ? "Guardando..." : "Guardar cambios"}
-      </Button>
+      <div>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Guardando..." : "Guardar cambios"}
+        </Button>
+      </div>
     </form>
   );
 }
