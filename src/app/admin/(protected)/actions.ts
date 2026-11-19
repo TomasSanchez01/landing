@@ -26,6 +26,7 @@ async function requireAdmin() {
 function revalidatePublicPaths(slug?: string) {
   revalidatePath("/");
   revalidatePath("/admin");
+  revalidatePath("/admin/productos");
   if (slug) revalidatePath(`/producto/${slug}`);
 }
 
@@ -50,7 +51,7 @@ export async function createProduct(input: ProductInput) {
 
   await docRef.set(product);
   revalidatePublicPaths(product.slug);
-  redirect("/admin");
+  redirect("/admin/productos");
 }
 
 export async function updateProduct(id: string, input: ProductInput) {
@@ -73,7 +74,7 @@ export async function updateProduct(id: string, input: ProductInput) {
   await docRef.set(product);
   revalidatePublicPaths(product.slug);
   revalidatePublicPaths((existing.data() as Product).slug);
-  redirect("/admin");
+  redirect("/admin/productos");
 }
 
 export async function reorderProduct(id: string, direction: "up" | "down") {

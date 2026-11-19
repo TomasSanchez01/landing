@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getAllProducts } from "@/lib/products";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { ProductRow } from "./product-row";
+import { ProductRow } from "../product-row";
 
 export default async function AdminDashboardPage() {
   const products = await getAllProducts();

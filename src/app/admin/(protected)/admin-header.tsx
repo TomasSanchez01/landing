@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { BookOpen, Gamepad2, LogOut, QrCode, Settings } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { LogOut } from "lucide-react";
+import { ADMIN_SECTIONS } from "./admin-nav";
 
 export function AdminHeader({ email }: { email: string }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isHome = pathname === "/admin";
 
   const handleLogout = async () => {
     await fetch("/api/admin/session", { method: "DELETE" });
@@ -15,43 +18,41 @@ export function AdminHeader({ email }: { email: string }) {
   };
 
   return (
-    <div className="border-b border-border/50 bg-secondary/20">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+    <header className="border-b border-border/50">
+      <div className="container mx-auto flex h-14 items-center justify-between gap-3 px-4">
         <Link href="/admin" className="font-semibold">
-          Panel de administración
+          Capocannoniere <span className="font-normal text-muted-foreground">· Admin</span>
         </Link>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span>{email}</span>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin/manual">
-              <BookOpen className="w-4 h-4 mr-1.5" />
-              Manual
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin/capofinger">
-              <Gamepad2 className="w-4 h-4 mr-1.5" />
-              CapoFinger
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin/paginas">
-              <QrCode className="w-4 h-4 mr-1.5" />
-              Páginas extra
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin/configuracion">
-              <Settings className="w-4 h-4 mr-1.5" />
-              Configuración
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-1.5" />
-            Salir
-          </Button>
-        </div>
+        <button
+          onClick={handleLogout}
+          title={email ? `Salir (${email})` : "Salir"}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+          Salir
+        </button>
       </div>
-    </div>
+
+      {/* En el inicio la grilla ya es la navegación; en las demás páginas mostramos las secciones. */}
+      {!isHome && (
+        <nav className="container mx-auto flex gap-1 overflow-x-auto px-4 pb-2">
+          {ADMIN_SECTIONS.map(({ href, label }) => {
+            const active = pathname === href || pathname.startsWith(href + "/");
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1 text-sm transition-colors",
+                  active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                )}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+    </header>
   );
 }

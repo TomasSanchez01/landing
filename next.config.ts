@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   // bundler de Next no resuelve bien; lo dejamos afuera del bundle para que
   // se cargue nativo en runtime (evita el crash ERR_REQUIRE_ESM en Vercel).
   serverExternalPackages: ["firebase-admin"],
+  // La app de stock se lee del disco en runtime; hay que incluirla en el deploy.
+  outputFileTracingIncludes: {
+    "/admin/stock-app": ["./src/app/admin/stock-app/stock.html"],
+  },
   images: {
     // Vercel Hobby limita la cantidad de "source images" que se pueden
     // optimizar por mes; cada imagen del admin se sube con un nombre nuevo

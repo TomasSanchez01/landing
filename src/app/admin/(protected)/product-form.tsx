@@ -519,7 +519,7 @@ export function ProductForm({ product }: { product?: Product }) {
         <Button type="submit" disabled={isPending}>
           {isPending ? "Guardando..." : isEditing ? "Guardar cambios" : "Crear producto"}
         </Button>
-        <Button type="button" variant="outline" onClick={() => router.push("/admin")}>
+        <Button type="button" variant="outline" onClick={() => router.push("/admin/productos")}>
           Cancelar
         </Button>
       </div>
